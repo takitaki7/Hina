@@ -4,6 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { Clip, Pulse } from "@/lib/types";
 import ClipCard from "./ClipCard";
 
+const TABS = [
+  { icon: "🏠", label: "ホーム" },
+  { icon: "🔍", label: "さがす" },
+  { icon: "📥", label: "受信箱" },
+  { icon: "🫧", label: "プロフィール" },
+];
+
 export default function Feed({
   clips,
   onLike,
@@ -39,36 +46,64 @@ export default function Feed({
   }, [clips.length]);
 
   return (
-    <div
-      ref={containerRef}
-      className="no-scrollbar h-dvh snap-y snap-mandatory overflow-y-scroll overscroll-y-none"
-    >
-      {/* トップバー: ロゴ + 撮影ボタン */}
-      <div className="fixed left-0 right-0 top-0 z-30 flex items-center justify-between px-4 pt-5">
-        <span className="w-16" />
-        <h1 className="pointer-events-none text-lg font-black lowercase tracking-tighter drop-shadow">
-          <span className="grad-text">hina</span>
-          <span className="ml-1 text-[10px] font-bold text-white/60">5s</span>
-        </h1>
+    <div className="relative h-dvh bg-black">
+      {/* 上部タブ */}
+      <div className="pointer-events-none fixed left-0 right-0 top-0 z-30 flex items-center justify-center gap-5 pt-5 text-[15px]">
+        <span className="font-medium text-white/60">フォロー中</span>
+        <span className="font-bold">おすすめ</span>
+        <span className="pointer-events-auto absolute right-4 text-xl">🔍</span>
+      </div>
+
+      {/* フィード */}
+      <div
+        ref={containerRef}
+        className="no-scrollbar h-dvh snap-y snap-mandatory overflow-y-scroll overscroll-y-none"
+      >
+        {clips.map((clip) => (
+          <ClipCard
+            key={clip.id}
+            clip={clip}
+            active={clip.id === activeId}
+            onLike={onLike}
+            onPulse={onPulse}
+            onDelete={onDelete}
+          />
+        ))}
+      </div>
+
+      {/* 下部タブバー（TikTok風） */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-white/10 bg-black/85 px-2 pb-2 pt-2 backdrop-blur-xl">
+        <button className="flex flex-col items-center gap-0.5 text-[10px] font-medium">
+          <span className="text-xl">{TABS[0].icon}</span>
+          {TABS[0].label}
+        </button>
+        <button className="flex flex-col items-center gap-0.5 text-[10px] font-medium text-white/55">
+          <span className="text-xl">{TABS[1].icon}</span>
+          {TABS[1].label}
+        </button>
+
+        {/* 中央の作成ボタン */}
         <button
           onClick={onCreate}
           aria-label="5秒とる"
-          className="flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-black text-black shadow-lg shadow-black/30 transition active:scale-90"
+          className="relative grid h-8 w-12 place-items-center transition active:scale-90"
         >
-          <span>🎬</span>とる
+          <span className="absolute inset-0 -left-1 rounded-xl bg-[#00f2ea]" />
+          <span className="absolute inset-0 left-1 rounded-xl bg-[#ff2d55]" />
+          <span className="relative grid h-8 w-12 place-items-center rounded-xl bg-white text-2xl font-black text-black">
+            +
+          </span>
         </button>
-      </div>
 
-      {clips.map((clip) => (
-        <ClipCard
-          key={clip.id}
-          clip={clip}
-          active={clip.id === activeId}
-          onLike={onLike}
-          onPulse={onPulse}
-          onDelete={onDelete}
-        />
-      ))}
+        <button className="flex flex-col items-center gap-0.5 text-[10px] font-medium text-white/55">
+          <span className="text-xl">{TABS[2].icon}</span>
+          {TABS[2].label}
+        </button>
+        <button className="flex flex-col items-center gap-0.5 text-[10px] font-medium text-white/55">
+          <span className="text-xl">{TABS[3].icon}</span>
+          {TABS[3].label}
+        </button>
+      </nav>
     </div>
   );
 }
