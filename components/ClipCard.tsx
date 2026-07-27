@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Clip, CLIP_SECONDS, Pulse, VIBES } from "@/lib/types";
+import { Author, Clip, CLIP_SECONDS, Pulse, VIBES } from "@/lib/types";
 import { getBlob } from "@/lib/db";
 
 interface Float {
@@ -16,24 +16,38 @@ const BINS = 24;
 export default function ClipCard({
   clip,
   active,
+  me,
+  following,
+  saved,
   onLike,
   onPulse,
+  onToggleFollow,
+  onToggleSave,
+  onOpenComments,
+  onOpenProfile,
   onDelete,
 }: {
   clip: Clip;
   active: boolean;
+  me: Author;
+  following: boolean;
+  saved: boolean;
   onLike: (id: string) => void;
   onPulse: (id: string, p: Pulse) => void;
-  onDelete?: (id: string) => void;
+  onToggleFollow: (handle: string) => void;
+  onToggleSave: (id: string) => void;
+  onOpenComments: (id: string) => void;
+  onOpenProfile: (handle: string) => void;
+  onDelete: (id: string) => void;
 }) {
   const vibe = VIBES[clip.vibe];
+  const isMine = clip.author.handle === me.handle;
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [head, setHead] = useState(0);
   const [floats, setFloats] = useState<Float[]>([]);
   const [muted, setMuted] = useState(true);
   const [heart, setHeart] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [paused, setPaused] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -42,7 +56,6 @@ export default function ClipCard({
   const raf = useRef(0);
   const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 動画Blobの読み込み
   useEffect(() => {
     if (clip.kind !== "video" || !clip.hasBlob) return;
     let u: string | null = null;
@@ -70,7 +83,6 @@ export default function ClipCard({
       return next.length > 24 ? next.slice(next.length - 24) : next;
     });
 
-  // 再生ループ（アクティブ かつ 再生中のみ）＋ Pulse を再生位置に同期して再現
   useEffect(() => {
     const v = videoRef.current;
     if (!active || paused) {
@@ -103,7 +115,6 @@ export default function ClipCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, paused, clip.kind, clip.pulses]);
 
-  // 非アクティブになったら頭出し
   useEffect(() => {
     if (!active) {
       lastHead.current = 0;
@@ -129,12 +140,11 @@ export default function ClipCard({
       setHeart(true);
       setTimeout(() => setHeart(false), 700);
       spawn("❤️", true);
-      onPulse(clip.id, { t: head, emoji: "❤️" }); // いいねした瞬間を刻む
+      onPulse(clip.id, { t: head, emoji: "❤️" });
     }
     onLike(clip.id);
   }
 
-  // シングルタップ=一時停止 / ダブルタップ=いいね
   function onTap() {
     if (tapTimer.current) {
       clearTimeout(tapTimer.current);
@@ -150,18 +160,17 @@ export default function ClipCard({
 
   async function share() {
     const url = typeof window !== "undefined" ? window.location.href : "";
-    const data = {
-      title: "hina",
-      text: `${clip.caption}（@${clip.author.handle}）`,
-      url,
-    };
     try {
       if (navigator.share) {
-        await navigator.share(data);
+        await navigator.share({
+          title: "hina",
+          text: `${clip.caption}（@${clip.author.handle}）`,
+          url,
+        });
         return;
       }
     } catch {
-      return; // ユーザーがキャンセル
+      return;
     }
     try {
       await navigator.clipboard.writeText(url);
@@ -176,8 +185,8 @@ export default function ClipCard({
     setTimeout(() => setToast(""), 1800);
   }
 
-  const railBtn =
-    "flex flex-col items-center gap-0.5 transition active:scale-90";
+  const railBtn = "flex flex-col items-center gap-0.5 transition active:scale-90";
+  const stop = (e: React.MouseEvent) => e.stopPropagation();
 
   return (
     <section
@@ -206,7 +215,6 @@ export default function ClipCard({
         </div>
       )}
 
-      {/* タップ領域（シングル=停止 / ダブル=いいね） */}
       <button
         aria-label="再生・一時停止"
         onClick={onTap}
@@ -214,7 +222,6 @@ export default function ClipCard({
         tabIndex={-1}
       />
 
-      {/* 一時停止インジケータ */}
       {paused && active && (
         <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center">
           <span className="spring-in grid h-20 w-20 place-items-center rounded-full bg-black/40 text-4xl backdrop-blur">
@@ -223,7 +230,6 @@ export default function ClipCard({
         </div>
       )}
 
-      {/* Pulse フロート */}
       {floats.map((f) => (
         <span
           key={f.id}
@@ -243,25 +249,46 @@ export default function ClipCard({
         </span>
       )}
 
-      {/* トースト */}
       {toast && (
         <div className="spring-in pointer-events-none absolute left-1/2 top-24 z-30 -translate-x-1/2 rounded-full bg-black/70 px-4 py-2 text-xs font-medium backdrop-blur">
           {toast}
         </div>
       )}
 
-      {/* 右アクションレール */}
+      {/* 右アクションレール（TikTok風） */}
       <div className="absolute right-2.5 z-20 flex flex-col items-center gap-5 bottom-[calc(96px+env(safe-area-inset-bottom))]">
-        <div className="relative mb-1">
+        <button
+          onClick={(e) => {
+            stop(e);
+            onOpenProfile(clip.author.handle);
+          }}
+          className="relative mb-1"
+          aria-label="プロフィール"
+        >
           <span className="grid h-11 w-11 place-items-center rounded-full bg-white/15 text-2xl ring-2 ring-white backdrop-blur">
             {clip.author.avatar}
           </span>
-          <span className="absolute -bottom-2 left-1/2 grid h-5 w-5 -translate-x-1/2 place-items-center rounded-full bg-[#ff2d55] text-xs font-black text-white">
-            +
-          </span>
-        </div>
+          {!isMine && !following && (
+            <span
+              onClick={(e) => {
+                stop(e);
+                onToggleFollow(clip.author.handle);
+              }}
+              className="absolute -bottom-2 left-1/2 grid h-5 w-5 -translate-x-1/2 place-items-center rounded-full bg-[#ff2d55] text-xs font-black text-white"
+            >
+              +
+            </span>
+          )}
+        </button>
 
-        <button onClick={like} className={railBtn} aria-label="いいね">
+        <button
+          onClick={(e) => {
+            stop(e);
+            like();
+          }}
+          className={railBtn}
+          aria-label="いいね"
+        >
           <span className="text-[34px] leading-none">
             {clip.liked ? "❤️" : "🤍"}
           </span>
@@ -270,15 +297,25 @@ export default function ClipCard({
           </span>
         </button>
 
-        <div className={railBtn} title="Pulse（沸いた反応の数）">
-          <span className="text-[30px] leading-none">⚡</span>
+        <button
+          onClick={(e) => {
+            stop(e);
+            onOpenComments(clip.id);
+          }}
+          className={railBtn}
+          aria-label="コメント"
+        >
+          <span className="text-[30px] leading-none">💬</span>
           <span className="text-xs font-semibold tabular-nums">
-            {clip.pulses.length}
+            {clip.comments.length}
           </span>
-        </div>
+        </button>
 
         <button
-          onClick={() => setSaved((s) => !s)}
+          onClick={(e) => {
+            stop(e);
+            onToggleSave(clip.id);
+          }}
           className={railBtn}
           aria-label="保存"
         >
@@ -288,14 +325,24 @@ export default function ClipCard({
           <span className="text-xs font-semibold">保存</span>
         </button>
 
-        <button onClick={share} className={railBtn} aria-label="シェア">
+        <button
+          onClick={(e) => {
+            stop(e);
+            share();
+          }}
+          className={railBtn}
+          aria-label="シェア"
+        >
           <span className="text-[30px] leading-none">↗️</span>
           <span className="text-xs font-semibold">シェア</span>
         </button>
 
-        {onDelete && clip.author.handle === "you" ? (
+        {isMine ? (
           <button
-            onClick={() => onDelete(clip.id)}
+            onClick={(e) => {
+              stop(e);
+              onDelete(clip.id);
+            }}
             className={railBtn}
             aria-label="削除"
           >
@@ -312,7 +359,10 @@ export default function ClipCard({
 
         {clip.kind === "video" && url && (
           <button
-            onClick={() => setMuted((m) => !m)}
+            onClick={(e) => {
+              stop(e);
+              setMuted((m) => !m);
+            }}
             className="grid h-8 w-8 place-items-center rounded-full bg-black/30 text-base backdrop-blur transition active:scale-90"
             aria-label={muted ? "ミュート解除" : "ミュート"}
           >
@@ -323,19 +373,25 @@ export default function ClipCard({
 
       {/* 左下: ユーザー・キャプション・サウンド */}
       <div className="absolute inset-x-0 z-20 pl-3 pr-20 bottom-[calc(72px+env(safe-area-inset-bottom))]">
-        <div className="mb-1.5 text-base font-bold drop-shadow">
+        <button
+          onClick={(e) => {
+            stop(e);
+            onOpenProfile(clip.author.handle);
+          }}
+          className="mb-1.5 text-base font-bold drop-shadow"
+        >
           @{clip.author.handle}
-        </div>
+        </button>
         <p className="mb-2 line-clamp-2 whitespace-pre-wrap text-[14px] leading-snug drop-shadow">
           {clip.caption}
         </p>
         <div className="flex items-center gap-1.5 text-[12px] text-white/90 drop-shadow">
           <span>🎵</span>
-          <span className="truncate">オリジナル楽曲 · {clip.author.name}</span>
+          <span className="truncate">オリジナル音声 · {clip.author.name}</span>
         </div>
       </div>
 
-      {/* 最下部: 極細シークバー + さりげない Pulse ピーク */}
+      {/* 最下部: 極細シークバー + Pulse ピーク */}
       <div className="absolute inset-x-0 z-20 px-3 bottom-[calc(60px+env(safe-area-inset-bottom))]">
         <div className="relative h-[2.5px] w-full rounded-full bg-white/25">
           <div
@@ -351,9 +407,7 @@ export default function ClipCard({
                   left: `${(i / (BINS - 1)) * 100}%`,
                   opacity: 0.35 + (c / bins.max) * 0.65,
                   boxShadow:
-                    c === bins.max
-                      ? "0 0 6px 1px rgba(255,255,255,0.9)"
-                      : "none",
+                    c === bins.max ? "0 0 6px 1px rgba(255,255,255,0.9)" : "none",
                 }}
               />
             ) : null,

@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Clip, CLIP_SECONDS, VibeKey, VIBE_LIST, VIBES } from "@/lib/types";
-import { ME } from "@/lib/seed";
+import { Author, Clip, CLIP_SECONDS, VibeKey, VIBE_LIST, VIBES } from "@/lib/types";
 
 type Stage = "capture" | "review";
 
 export default function Recorder({
+  me,
   onClose,
   onPost,
 }: {
+  me: Author;
   onClose: () => void;
   onPost: (clip: Clip, blob: Blob) => void;
 }) {
@@ -129,12 +130,13 @@ export default function Recorder({
     const clip: Clip = {
       id,
       kind: "video",
-      author: ME,
+      author: me,
       caption: caption.trim() || "5秒の記録",
       vibe,
       createdAt: Date.now(),
       likes: 0,
       pulses: [],
+      comments: [],
       hasBlob: true,
     };
     onPost(clip, blob);

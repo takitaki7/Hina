@@ -61,6 +61,20 @@ export interface Author {
   avatar: string; // emoji
 }
 
+export interface UserProfile extends Author {
+  bio: string;
+  followers: number; // ベースのフォロワー数
+}
+
+export interface Comment {
+  id: string;
+  author: Author;
+  text: string;
+  createdAt: number;
+  likes: number;
+  liked?: boolean;
+}
+
 /** 5秒フォーマットに同期したリアクション（新要素 Pulse の実体） */
 export interface Pulse {
   t: number; // 0..5 秒。押された瞬間の再生位置
@@ -79,6 +93,7 @@ export interface Clip {
   likes: number;
   liked?: boolean;
   pulses: Pulse[];
+  comments: Comment[];
   /** kind === "video" のとき true。実データは IndexedDB (key = id) */
   hasBlob?: boolean;
 }
