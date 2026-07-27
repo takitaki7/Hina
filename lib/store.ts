@@ -72,9 +72,15 @@ export function useClips() {
   const addPulse = useCallback(
     (id: string, pulse: Pulse) => {
       persist(
-        read().map((c) =>
-          c.id === id ? { ...c, pulses: [...c.pulses, pulse] } : c,
-        ),
+        read().map((c) => {
+          if (c.id !== id) return c;
+          const pulses = [...c.pulses, pulse];
+          // localStorage 肥大を防ぐため上限を設ける
+          return {
+            ...c,
+            pulses: pulses.length > 300 ? pulses.slice(-300) : pulses,
+          };
+        }),
       );
     },
     [persist],

@@ -5,12 +5,17 @@ export const ME: Author = { handle: "you", name: "きみ", avatar: "🫧" };
 const s = 1000;
 const now = Date.now();
 
-/** ばらけたリアクション（0..5秒）を作る */
+/**
+ * ばらけたリアクション（0..5秒）を作る。
+ * 乱数を使うと SSR とクライアントで DOM が食い違いハイドレーション不一致に
+ * なるため、決定論的にばらけさせる。
+ */
 function pulses(spec: [number, string, number][]): Clip["pulses"] {
   const out: Clip["pulses"] = [];
   for (const [t, emoji, n] of spec) {
     for (let i = 0; i < n; i++) {
-      out.push({ t: Math.max(0, Math.min(5, t + (Math.random() - 0.5) * 0.5)), emoji });
+      const jitter = (i / Math.max(1, n) - 0.5) * 0.6; // -0.3..0.3
+      out.push({ t: Math.max(0, Math.min(5, t + jitter)), emoji });
     }
   }
   return out;

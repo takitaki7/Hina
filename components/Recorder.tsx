@@ -27,6 +27,14 @@ export default function Recorder({
   const recRef = useRef<MediaRecorder | null>(null);
   const chunks = useRef<BlobPart[]>([]);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hardStop = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // レビュー用 object URL の後始末
+  useEffect(() => {
+    return () => {
+      if (reviewUrl) URL.revokeObjectURL(reviewUrl);
+    };
+  }, [reviewUrl]);
 
   // カメラ起動
   useEffect(() => {
@@ -50,6 +58,7 @@ export default function Recorder({
       cancelled = true;
       stopStream();
       if (timer.current) clearInterval(timer.current);
+      if (hardStop.current) clearTimeout(hardStop.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage]);
@@ -86,16 +95,17 @@ export default function Recorder({
     rec.start();
     setRecording(true);
     setCount(CLIP_SECONDS);
-    timer.current = setInterval(() => {
-      setCount((c) => {
-        if (c <= 1) stopRecording();
-        return c - 1;
-      });
-    }, 1000);
+    // 5秒で確実に停止（表示用カウントとは分離）
+    hardStop.current = setTimeout(stopRecording, CLIP_SECONDS * 1000);
+    timer.current = setInterval(
+      () => setCount((c) => Math.max(0, c - 1)),
+      1000,
+    );
   }
 
   function stopRecording() {
     if (timer.current) clearInterval(timer.current);
+    if (hardStop.current) clearTimeout(hardStop.current);
     setRecording(false);
     if (recRef.current && recRef.current.state !== "inactive")
       recRef.current.stop();

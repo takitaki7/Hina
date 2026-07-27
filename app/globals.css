@@ -168,3 +168,14 @@ body {
   -webkit-backdrop-filter: blur(20px) saturate(1.4);
   border: 1px solid var(--color-line);
 }
+
+/* モーション控えめ設定を尊重 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
