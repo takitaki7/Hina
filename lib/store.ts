@@ -1,79 +1,84 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Post, Reaction } from "./types";
-import { SEED_POSTS } from "./seed";
+import { Clip, Pulse } from "./types";
+import { SEED_CLIPS } from "./seed";
+import { delBlob } from "./db";
 
-const KEY = "hina.posts.v1";
+const KEY = "hina.clips.v1";
 
-/**
- * localStorage を使ったゼロコンフィグな永続化ストア。
- * バックエンド不要で Vercel にそのままデプロイできる。
- * 将来 DB (Vercel Postgres / KV 等) に差し替える場合は、
- * この読み書きだけを fetch("/api/posts") に置き換えればよい。
- */
-function read(): Post[] {
-  if (typeof window === "undefined") return SEED_POSTS;
+function read(): Clip[] {
+  if (typeof window === "undefined") return SEED_CLIPS;
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (!raw) return SEED_POSTS;
-    const parsed = JSON.parse(raw) as Post[];
-    return Array.isArray(parsed) && parsed.length ? parsed : SEED_POSTS;
+    if (!raw) return SEED_CLIPS;
+    const parsed = JSON.parse(raw) as Clip[];
+    return Array.isArray(parsed) && parsed.length ? parsed : SEED_CLIPS;
   } catch {
-    return SEED_POSTS;
+    return SEED_CLIPS;
   }
 }
 
-function write(posts: Post[]) {
+function write(clips: Clip[]) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(KEY, JSON.stringify(posts));
+    window.localStorage.setItem(KEY, JSON.stringify(clips));
   } catch {
-    /* quota 超過などは黙って無視 */
+    /* noop */
   }
 }
 
-export function usePosts() {
-  const [posts, setPosts] = useState<Post[]>(SEED_POSTS);
+export function useClips() {
+  const [clips, setClips] = useState<Clip[]>(SEED_CLIPS);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setPosts(read());
+    setClips(read());
     setReady(true);
   }, []);
 
-  const persist = useCallback((next: Post[]) => {
-    setPosts(next);
+  const persist = useCallback((next: Clip[]) => {
+    setClips(next);
     write(next);
   }, []);
 
-  const addPost = useCallback(
-    (post: Post) => {
-      persist([post, ...read()]);
+  const addClip = useCallback(
+    (clip: Clip) => persist([clip, ...read()]),
+    [persist],
+  );
+
+  const removeClip = useCallback(
+    (id: string) => {
+      persist(read().filter((c) => c.id !== id));
+      delBlob(id).catch(() => {});
     },
     [persist],
   );
 
-  const react = useCallback(
-    (postId: string, reaction: Reaction) => {
-      const next = read().map((p) => {
-        if (p.id !== postId) return p;
-        const reactions = { ...p.reactions };
-        // 既存の自分のリアクションを取り消す
-        if (p.mine) reactions[p.mine] = Math.max(0, reactions[p.mine] - 1);
-        let mine: Reaction | null = reaction;
-        if (p.mine === reaction) {
-          // 同じものを再タップ → 取り消し
-          mine = null;
-        } else {
-          reactions[reaction] = (reactions[reaction] ?? 0) + 1;
-        }
-        return { ...p, reactions, mine };
-      });
-      persist(next);
+  const toggleLike = useCallback(
+    (id: string) => {
+      persist(
+        read().map((c) =>
+          c.id === id
+            ? { ...c, liked: !c.liked, likes: c.likes + (c.liked ? -1 : 1) }
+            : c,
+        ),
+      );
     },
     [persist],
   );
 
-  return { posts, ready, addPost, react };
+  /** Pulse を追加（押した秒数に固定） */
+  const addPulse = useCallback(
+    (id: string, pulse: Pulse) => {
+      persist(
+        read().map((c) =>
+          c.id === id ? { ...c, pulses: [...c.pulses, pulse] } : c,
+        ),
+      );
+    },
+    [persist],
+  );
+
+  return { clips, ready, addClip, removeClip, toggleLike, addPulse };
 }

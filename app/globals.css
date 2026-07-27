@@ -4,17 +4,11 @@
   --font-sans: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
 
-  --color-bg: #0a0a0f;
-  --color-surface: #14141f;
-  --color-surface-2: #1c1c2b;
-  --color-line: #2a2a3d;
-  --color-ink: #f4f4ff;
-  --color-muted: #9a9ab5;
-
-  --color-neon: #b8ff3a;
-  --color-grape: #a855f7;
-  --color-bubble: #ff5fa2;
-  --color-sky: #38bdf8;
+  --color-void: #050507;
+  --color-ink: #ffffff;
+  --color-muted: #a8a8bd;
+  --color-glass: rgba(255, 255, 255, 0.08);
+  --color-line: rgba(255, 255, 255, 0.14);
 }
 
 :root {
@@ -25,21 +19,18 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  overscroll-behavior: none;
 }
 
 body {
-  background:
-    radial-gradient(60% 40% at 15% 0%, rgba(168, 85, 247, 0.16), transparent 70%),
-    radial-gradient(50% 35% at 90% 5%, rgba(255, 95, 162, 0.14), transparent 70%),
-    radial-gradient(70% 50% at 50% 100%, rgba(56, 189, 248, 0.1), transparent 70%),
-    var(--color-bg);
-  background-attachment: fixed;
+  background: var(--color-void);
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
-/* きれいなスクロールバー隠し（横スクロール系で使用） */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -48,45 +39,123 @@ body {
   scrollbar-width: none;
 }
 
-@keyframes pop-in {
+/* ===== アニメーション ===== */
+@keyframes float-up {
   0% {
     opacity: 0;
-    transform: translateY(10px) scale(0.98);
+    transform: translateY(0) scale(0.4) rotate(var(--r, 0deg));
   }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-.animate-pop {
-  animation: pop-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes float-heart {
-  0% {
-    opacity: 0;
-    transform: translateY(0) scale(0.5);
-  }
-  30% {
+  15% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translateY(-40px) scale(1.4);
+    transform: translateY(-60vh) scale(1.3) rotate(var(--r, 0deg));
   }
 }
-.animate-heart {
-  animation: float-heart 0.7s ease-out forwards;
+.float-up {
+  animation: float-up 2.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-.gradient-text {
-  background: linear-gradient(
-    92deg,
-    var(--color-bubble),
-    var(--color-grape) 45%,
-    var(--color-sky)
-  );
+@keyframes drift {
+  0% {
+    opacity: 0;
+    transform: translate(0, 10px) scale(0.6);
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx, 40px), -46vh) scale(1);
+  }
+}
+.drift {
+  animation: drift 4.5s ease-out forwards;
+}
+
+@keyframes rise {
+  0% {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.rise {
+  animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes spring-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  60% {
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.spring-in {
+  animation: spring-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes ignite {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.ignite {
+  animation: ignite 0.9s ease-out forwards;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.08);
+  }
+}
+.breathe {
+  animation: breathe 6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.grad-text {
+  background: linear-gradient(92deg, #ff5fa2, #a855f7 45%, #38bdf8);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+.glass {
+  background: var(--color-glass);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid var(--color-line);
 }

@@ -2,13 +2,13 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Hina — きみのvibeを置いていく場所",
+  title: "hina — 5秒だけのSNS",
   description:
-    "シンプルでかわいいZ世代のためのSNS。今の気分をワンタップでシェアしよう。",
+    "5秒の動画だけをスワイプするSNS。リアクションは押した秒数に固定され、みんなの盛り上がりが再生に同期して蘇る「Pulse」体験。",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0f",
+  themeColor: "#050507",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

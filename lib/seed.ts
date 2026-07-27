@@ -1,58 +1,72 @@
-import { Post, User } from "./types";
+import { Author, Clip } from "./types";
 
-export const ME: User = {
-  handle: "you",
-  name: "きみ",
-  avatar: "🫧",
-  color: "#b8ff3a",
-};
+export const ME: Author = { handle: "you", name: "きみ", avatar: "🫧" };
 
-const emptyReactions = () => ({
-  "❤️": 0,
-  "😂": 0,
-  "🥹": 0,
-  "🔥": 0,
-  "👀": 0,
-});
-
+const s = 1000;
 const now = Date.now();
-const min = 60 * 1000;
 
-export const SEED_POSTS: Post[] = [
+/** ばらけたリアクション（0..5秒）を作る */
+function pulses(spec: [number, string, number][]): Clip["pulses"] {
+  const out: Clip["pulses"] = [];
+  for (const [t, emoji, n] of spec) {
+    for (let i = 0; i < n; i++) {
+      out.push({ t: Math.max(0, Math.min(5, t + (Math.random() - 0.5) * 0.5)), emoji });
+    }
+  }
+  return out;
+}
+
+export const SEED_CLIPS: Clip[] = [
   {
-    id: "s1",
-    author: { handle: "rui.mp3", name: "るい", avatar: "🎧", color: "#a855f7" },
-    text: "深夜のコンビニ、なんであんなに映画なんだろ 🌙",
-    vibe: "😭",
-    createdAt: now - 4 * min,
-    reactions: { ...emptyReactions(), "🥹": 12, "❤️": 34 },
-    mine: null,
+    id: "seed_hype",
+    kind: "motion",
+    author: { handle: "mikan", name: "みかん", avatar: "🍊" },
+    caption: "新しいスニーカー、\n開封5秒でこの音出た",
+    vibe: "hype",
+    createdAt: now - 40000 * s,
+    likes: 1240,
+    pulses: pulses([
+      [1.2, "🔥", 6],
+      [3.8, "🔥", 14],
+      [4.2, "🥹", 5],
+    ]),
   },
   {
-    id: "s2",
-    author: { handle: "mikan", name: "みかん", avatar: "🍊", color: "#ff5fa2" },
-    text: "新しいイヤホン届いた〜〜低音やばい、一生聴いてられる",
-    vibe: "🔥",
-    createdAt: now - 22 * min,
-    reactions: { ...emptyReactions(), "🔥": 21, "❤️": 9 },
-    mine: null,
+    id: "seed_emo",
+    kind: "motion",
+    author: { handle: "rui.mp3", name: "るい", avatar: "🎧" },
+    caption: "終電の窓、\nこの曲がエモすぎた",
+    vibe: "emo",
+    createdAt: now - 3600 * s,
+    likes: 862,
+    pulses: pulses([
+      [2.5, "😭", 10],
+      [4.6, "🫶", 8],
+    ]),
   },
   {
-    id: "s3",
-    author: { handle: "hiro_", name: "ひろ", avatar: "🛹", color: "#38bdf8" },
-    text: "テスト終わった瞬間の空、優勝すぎる ✨",
-    vibe: "✨",
-    createdAt: now - 68 * min,
-    reactions: { ...emptyReactions(), "❤️": 58, "😂": 4, "👀": 7 },
-    mine: null,
+    id: "seed_divine",
+    kind: "motion",
+    author: { handle: "hiro_", name: "ひろ", avatar: "🛹" },
+    caption: "テスト終わり、\n空を5秒だけ",
+    vibe: "divine",
+    createdAt: now - 7200 * s,
+    likes: 431,
+    pulses: pulses([
+      [0.6, "✨", 5],
+      [3.0, "✨", 9],
+    ]),
   },
   {
-    id: "s4",
-    author: { handle: "nao.zzz", name: "なお", avatar: "🐑", color: "#b8ff3a" },
-    text: "2度寝の権利、憲法で保障してほしい",
-    vibe: "💤",
-    createdAt: now - 3 * 60 * min,
-    reactions: { ...emptyReactions(), "😂": 41, "❤️": 15 },
-    mine: null,
+    id: "seed_chill",
+    kind: "motion",
+    author: { handle: "nao.zzz", name: "なお", avatar: "🐑" },
+    caption: "湯船に沈む5秒、\nこれが優勝",
+    vibe: "chill",
+    createdAt: now - 18000 * s,
+    likes: 158,
+    pulses: pulses([[2.0, "🧃", 6]]),
   },
 ];
+
+export const REACTION_EMOJIS = ["🔥", "🫶", "😭", "✨", "🥹"];
