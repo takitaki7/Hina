@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dawn</title>
+  <link rel="stylesheet" href="newtab.css" />
+</head>
+<body>
+  <div id="bg" class="bg"></div>
+  <div class="vignette"></div>
+
+  <main class="stage">
+    <!-- Top bar: date + settings -->
+    <header class="topbar">
+      <div class="date" id="date"></div>
+      <button class="icon-btn" id="openSettings" aria-label="Settings" title="Settings">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </header>
+
+    <!-- Center: clock, greeting, focus -->
+    <section class="hero">
+      <div class="clock" id="clock">00:00</div>
+      <div class="greeting" id="greeting"></div>
+
+      <div class="focus" id="focusWrap">
+        <div class="focus-ask" id="focusAsk"></div>
+        <input class="focus-input" id="focusInput" type="text" autocomplete="off" spellcheck="false" />
+        <div class="focus-done" id="focusDone" hidden>
+          <span class="focus-label" id="focusLabel"></span>
+          <span class="focus-text" id="focusText"></span>
+          <button class="link-btn" id="focusClear"></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Search -->
+    <section class="search-wrap">
+      <form id="searchForm" class="search" autocomplete="off">
+        <span class="engine-badge" id="engineBadge"></span>
+        <input id="searchInput" type="text" spellcheck="false" />
+        <button type="submit" class="search-go" aria-label="Search">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        </button>
+      </form>
+    </section>
+
+    <!-- Speed dial -->
+    <section class="dial" id="dial"></section>
+
+    <!-- Bottom: quote + pomodoro + todo trigger -->
+    <footer class="bottombar">
+      <button class="pill" id="todoBtn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span id="todoCount"></span>
+      </button>
+      <div class="quote" id="quote"></div>
+      <button class="pill" id="pomoBtn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/></svg>
+        <span id="pomoLabel"></span>
+      </button>
+    </footer>
+  </main>
+
+  <!-- To-do panel -->
+  <aside class="panel" id="todoPanel" hidden>
+    <div class="panel-head">
+      <h2 id="todoTitle"></h2>
+      <button class="icon-btn" data-close aria-label="Close">✕</button>
+    </div>
+    <form id="todoForm" class="todo-add">
+      <input id="todoInput" type="text" autocomplete="off" />
+      <button type="submit">+</button>
+    </form>
+    <ul class="todo-list" id="todoList"></ul>
+    <div class="panel-empty" id="todoEmpty"></div>
+  </aside>
+
+  <!-- Pomodoro panel -->
+  <aside class="panel panel-center" id="pomoPanel" hidden>
+    <div class="panel-head">
+      <h2 id="pomoTitle"></h2>
+      <button class="icon-btn" data-close aria-label="Close">✕</button>
+    </div>
+    <div class="pomo-time" id="pomoTime">25:00</div>
+    <div class="pomo-controls">
+      <button class="btn" id="pomoStart"></button>
+      <button class="btn ghost" id="pomoReset"></button>
+    </div>
+    <div class="pomo-modes">
+      <button data-min="25" class="mode active"></button>
+      <button data-min="5" class="mode"></button>
+      <button data-min="15" class="mode"></button>
+    </div>
+  </aside>
+
+  <!-- Settings panel -->
+  <aside class="panel panel-wide" id="settingsPanel" hidden>
+    <div class="panel-head">
+      <h2 id="setTitle"></h2>
+      <button class="icon-btn" data-close aria-label="Close">✕</button>
+    </div>
+
+    <label class="field">
+      <span id="setNameLabel"></span>
+      <input id="setName" type="text" autocomplete="off" />
+    </label>
+
+    <label class="field">
+      <span id="setEngineLabel"></span>
+      <select id="setEngine">
+        <option value="google">Google</option>
+        <option value="bing">Bing</option>
+        <option value="duckduckgo">DuckDuckGo</option>
+        <option value="ecosia">Ecosia</option>
+        <option value="brave">Brave</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span id="setLangLabel"></span>
+      <select id="setLang">
+        <option value="auto">Auto</option>
+        <option value="en">English</option>
+        <option value="ja">日本語</option>
+        <option value="es">Español</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span id="setThemeLabel"></span>
+      <select id="setTheme">
+        <option value="time">Time of day</option>
+        <option value="aurora">Aurora</option>
+        <option value="dusk">Dusk</option>
+        <option value="forest">Forest</option>
+        <option value="mono">Mono</option>
+      </select>
+    </label>
+
+    <div class="field">
+      <span id="setLinksLabel"></span>
+      <div id="linkEditor" class="link-editor"></div>
+      <form id="linkAddForm" class="link-add">
+        <input id="linkName" type="text" placeholder="Name" autocomplete="off" />
+        <input id="linkUrl" type="text" placeholder="https://" autocomplete="off" />
+        <button type="submit">+</button>
+      </form>
+    </div>
+
+    <div class="field toggles" id="toggles"></div>
+
+    <div class="settings-foot">
+      <span class="brand">Dawn · <span id="privacyNote"></span></span>
+    </div>
+  </aside>
+
+  <div class="scrim" id="scrim" hidden></div>
+
+  <script src="i18n.js"></script>
+  <script src="quotes.js"></script>
+  <script src="newtab.js"></script>
+</body>
+</html>
