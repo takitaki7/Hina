@@ -77,6 +77,23 @@ Keyboard: press <kbd>/</kbd> to jump to search, <kbd>Esc</kbd> to close panels.
 
 ---
 
+## Live web demo (Vercel)
+
+A Chrome extension isn't a website, so it doesn't appear on Vercel on its own.
+But Dawn is plain static HTML/CSS/JS and already falls back from
+`chrome.storage` to `localStorage`, so it runs unchanged as a web page.
+
+The build copies the static files into `public/dawn/` (see
+`scripts/sync-demo.mjs`, run automatically before `next build`), and a rewrite
+in `next.config.mjs` serves it at:
+
+```
+https://<your-vercel-domain>/dawn
+```
+
+`extension/` stays the single source of truth — edit there, and the demo
+re-syncs on the next build (or run `npm run sync:demo` locally).
+
 ## Install (developer / unpacked)
 
 1. Open `chrome://extensions`
