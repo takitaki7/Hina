@@ -8,19 +8,36 @@
   <link rel="stylesheet" href="newtab.css" />
 </head>
 <body>
+  <!-- Liquid-glass refraction filter (progressive enhancement) -->
+  <svg class="svg-defs" aria-hidden="true" width="0" height="0">
+    <defs>
+      <filter id="liquid" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.012 0.014" numOctaves="2" seed="7" result="noise" />
+        <feGaussianBlur in="noise" stdDeviation="1.4" result="soft" />
+        <feDisplacementMap in="SourceGraphic" in2="soft" scale="26" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- Background stack -->
   <div id="bg" class="bg"></div>
-  <div class="vignette"></div>
+  <div class="blobs" aria-hidden="true">
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+    <span class="blob b3"></span>
+    <span class="blob b4"></span>
+  </div>
+  <div class="caustics" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
 
   <main class="stage">
-    <!-- Top bar: date + settings -->
     <header class="topbar">
       <div class="date" id="date"></div>
-      <button class="icon-btn" id="openSettings" aria-label="Settings" title="Settings">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <button class="icon-btn glass glass-round" id="openSettings" aria-label="Settings" title="Settings">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
     </header>
 
-    <!-- Center: clock, greeting, focus -->
     <section class="hero">
       <div class="clock" id="clock">00:00</div>
       <div class="greeting" id="greeting"></div>
@@ -29,16 +46,16 @@
         <div class="focus-ask" id="focusAsk"></div>
         <input class="focus-input" id="focusInput" type="text" autocomplete="off" spellcheck="false" />
         <div class="focus-done" id="focusDone" hidden>
-          <span class="focus-label" id="focusLabel"></span>
+          <button class="focus-check" id="focusCheck" aria-label="Complete focus"></button>
           <span class="focus-text" id="focusText"></span>
+          <span class="streak glass" id="streak" hidden></span>
           <button class="link-btn" id="focusClear"></button>
         </div>
       </div>
     </section>
 
-    <!-- Search -->
     <section class="search-wrap">
-      <form id="searchForm" class="search" autocomplete="off">
+      <form id="searchForm" class="search glass glass-pill" autocomplete="off">
         <span class="engine-badge" id="engineBadge"></span>
         <input id="searchInput" type="text" spellcheck="false" />
         <button type="submit" class="search-go" aria-label="Search">
@@ -47,17 +64,15 @@
       </form>
     </section>
 
-    <!-- Speed dial -->
     <section class="dial" id="dial"></section>
 
-    <!-- Bottom: quote + pomodoro + todo trigger -->
     <footer class="bottombar">
-      <button class="pill" id="todoBtn">
+      <button class="pill glass glass-pill" id="todoBtn">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         <span id="todoCount"></span>
       </button>
       <div class="quote" id="quote"></div>
-      <button class="pill" id="pomoBtn">
+      <button class="pill glass glass-pill" id="pomoBtn">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/></svg>
         <span id="pomoLabel"></span>
       </button>
@@ -65,28 +80,34 @@
   </main>
 
   <!-- To-do panel -->
-  <aside class="panel" id="todoPanel" hidden>
+  <aside class="panel glass" id="todoPanel" hidden>
     <div class="panel-head">
       <h2 id="todoTitle"></h2>
       <button class="icon-btn" data-close aria-label="Close">✕</button>
     </div>
     <form id="todoForm" class="todo-add">
       <input id="todoInput" type="text" autocomplete="off" />
-      <button type="submit">+</button>
+      <button type="submit" class="glass glass-round">+</button>
     </form>
     <ul class="todo-list" id="todoList"></ul>
     <div class="panel-empty" id="todoEmpty"></div>
   </aside>
 
   <!-- Pomodoro panel -->
-  <aside class="panel panel-center" id="pomoPanel" hidden>
+  <aside class="panel panel-center glass" id="pomoPanel" hidden>
     <div class="panel-head">
       <h2 id="pomoTitle"></h2>
       <button class="icon-btn" data-close aria-label="Close">✕</button>
     </div>
-    <div class="pomo-time" id="pomoTime">25:00</div>
+    <div class="pomo-ring">
+      <svg viewBox="0 0 120 120" class="ring">
+        <circle class="ring-track" cx="60" cy="60" r="52" />
+        <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52" />
+      </svg>
+      <div class="pomo-time" id="pomoTime">25:00</div>
+    </div>
     <div class="pomo-controls">
-      <button class="btn" id="pomoStart"></button>
+      <button class="btn primary" id="pomoStart"></button>
       <button class="btn ghost" id="pomoReset"></button>
     </div>
     <div class="pomo-modes">
@@ -97,7 +118,7 @@
   </aside>
 
   <!-- Settings panel -->
-  <aside class="panel panel-wide" id="settingsPanel" hidden>
+  <aside class="panel panel-wide glass" id="settingsPanel" hidden>
     <div class="panel-head">
       <h2 id="setTitle"></h2>
       <button class="icon-btn" data-close aria-label="Close">✕</button>
@@ -146,7 +167,7 @@
       <form id="linkAddForm" class="link-add">
         <input id="linkName" type="text" placeholder="Name" autocomplete="off" />
         <input id="linkUrl" type="text" placeholder="https://" autocomplete="off" />
-        <button type="submit">+</button>
+        <button type="submit" class="glass glass-round">+</button>
       </form>
     </div>
 
@@ -156,6 +177,20 @@
       <span class="brand">Dawn · <span id="privacyNote"></span></span>
     </div>
   </aside>
+
+  <!-- First-run onboarding -->
+  <div class="onboard" id="onboard" hidden>
+    <div class="onboard-card glass">
+      <div class="onboard-mark">🌅</div>
+      <h1 id="obTitle"></h1>
+      <p id="obSub"></p>
+      <form id="obForm" class="onboard-form">
+        <input id="obName" type="text" autocomplete="off" spellcheck="false" />
+        <button type="submit" class="btn primary" id="obGo"></button>
+      </form>
+      <button class="link-btn" id="obSkip"></button>
+    </div>
+  </div>
 
   <div class="scrim" id="scrim" hidden></div>
 

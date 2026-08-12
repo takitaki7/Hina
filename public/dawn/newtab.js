@@ -1,10 +1,10 @@
 "use strict";
 
 /* ------------------------------------------------------------------ *
- * Dawn — a calm new tab.
+ * Dawn — a calm new tab (Liquid Glass edition).
  * Everything runs on-device. No backend, no network, no accounts.
  * State lives in chrome.storage.local (falls back to localStorage
- * so the page also works when opened directly during development).
+ * so the page also works when opened directly as a web demo).
  * ------------------------------------------------------------------ */
 
 const ENGINES = {
@@ -17,7 +17,7 @@ const ENGINES = {
 
 const DEFAULTS = {
   name: "",
-  lang: "auto",
+  lang: "en", // English-first; users can switch to Auto / 日本語 / Español
   engine: "google",
   theme: "time",
   links: [
@@ -27,9 +27,11 @@ const DEFAULTS = {
     { name: "Calendar", url: "https://calendar.google.com" },
     { name: "Maps", url: "https://maps.google.com" },
   ],
-  focus: { date: "", text: "" },
+  focus: { date: "", text: "", done: false },
+  streak: { count: 0, last: "" }, // consecutive days a focus was completed
   todos: [],
   toggles: { quote: true, dial: true },
+  firstRunDone: false,
 };
 
 /* ---------- storage abstraction ---------- */
@@ -53,9 +55,14 @@ const store = {
 
 /* ---------- app state ---------- */
 let S = {};
-let T = I18N.en; // active translation table
+let T = I18N.en;
 const $ = (id) => document.getElementById(id);
 const todayKey = () => new Date().toISOString().slice(0, 10);
+const dayKey = (offset) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().slice(0, 10);
+};
 
 function save() { store.set(S); }
 
@@ -67,6 +74,7 @@ function save() { store.set(S); }
   renderAll();
   startClock();
   wireEvents();
+  maybeOnboard();
 })();
 
 function deepMerge(base, over) {
@@ -86,7 +94,6 @@ function applyLang() {
   T = I18N[code];
   document.documentElement.lang = code;
 }
-
 function activeLangCode() { return resolveLang(S.lang); }
 
 /* ---------- render ---------- */
@@ -104,7 +111,6 @@ function renderAll() {
 function renderStaticText() {
   $("focusAsk").textContent = T.focusAsk;
   $("focusInput").placeholder = T.focusPlaceholder;
-  $("focusLabel").textContent = T.focusLabel;
   $("focusClear").textContent = T.focusClear;
   $("searchInput").placeholder = T.searchPlaceholder;
   $("todoTitle").textContent = T.todoTitle;
@@ -121,6 +127,11 @@ function renderStaticText() {
   $("setThemeLabel").textContent = T.setTheme;
   $("setLinksLabel").textContent = T.setLinks;
   $("privacyNote").textContent = T.privacy;
+  $("obTitle").textContent = T.ob_title;
+  $("obSub").textContent = T.ob_sub;
+  $("obName").placeholder = T.ob_placeholder;
+  $("obGo").textContent = T.ob_go;
+  $("obSkip").textContent = T.ob_skip;
   const modes = document.querySelectorAll("#pomoPanel .mode");
   if (modes[0]) modes[0].textContent = T.m_focus;
   if (modes[1]) modes[1].textContent = T.m_short;
@@ -131,21 +142,20 @@ function renderStaticText() {
 /* ---------- clock + theme ---------- */
 function startClock() {
   renderClock();
-  // tick to the top of the next minute, then every minute
   const now = new Date();
   const ms = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
   setTimeout(() => {
     renderClock();
     renderGreeting();
-    setInterval(() => { renderClock(); renderGreeting(); }, 60000);
+    renderFocus();
+    setInterval(() => { renderClock(); renderGreeting(); renderFocus(); }, 60000);
   }, ms);
 }
 
 function renderClock() {
   const now = new Date();
-  const h = now.getHours();
-  const m = now.getMinutes();
-  $("clock").textContent = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  $("clock").textContent =
+    `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
   $("date").textContent = now.toLocaleDateString(activeLangCode(), T.dateFmt);
   applyTheme();
 }
@@ -180,38 +190,67 @@ function renderGreeting() {
   $("greeting").textContent = S.name ? `${g}, ${S.name}.` : `${g}.`;
 }
 
-/* ---------- focus ---------- */
+/* ---------- focus + streak ---------- */
 function renderFocus() {
   const active = S.focus.date === todayKey() && S.focus.text;
   $("focusInput").hidden = !!active;
   $("focusAsk").hidden = !!active;
   $("focusDone").hidden = !active;
-  if (active) $("focusText").textContent = S.focus.text;
-  else $("focusInput").value = "";
+  if (active) {
+    $("focusText").textContent = S.focus.text;
+    $("focusDone").classList.toggle("done", !!S.focus.done);
+    $("focusCheck").textContent = S.focus.done ? "✓" : "";
+  } else {
+    $("focusInput").value = "";
+  }
+  const s = $("streak");
+  if (S.streak.count > 0) { s.hidden = false; s.textContent = `🔥 ${S.streak.count}`; }
+  else s.hidden = true;
+}
+
+function setFocus(text) {
+  S.focus = { date: todayKey(), text: text.trim(), done: false };
+  save();
+  renderFocus();
+}
+
+function completeFocus() {
+  const nowDone = !S.focus.done;
+  S.focus.done = nowDone;
+  if (nowDone && S.streak.last !== todayKey()) {
+    // advance the streak at most once per day
+    S.streak.count = S.streak.last === dayKey(-1) ? S.streak.count + 1 : 1;
+    S.streak.last = todayKey();
+  }
+  save();
+  renderFocus();
 }
 
 /* ---------- search ---------- */
-function renderSearch() {
-  $("engineBadge").textContent = ENGINES[S.engine].label;
-}
+function renderSearch() { $("engineBadge").textContent = ENGINES[S.engine].label; }
 
 function runSearch(q) {
   q = q.trim();
   if (!q) return;
-  if (isUrl(q)) {
-    location.href = /^https?:\/\//i.test(q) ? q : "https://" + q;
-    return;
-  }
+  if (isUrl(q)) { location.href = /^https?:\/\//i.test(q) ? q : "https://" + q; return; }
   location.href = ENGINES[S.engine].url + encodeURIComponent(q);
 }
-
 function isUrl(s) {
   if (/\s/.test(s)) return false;
   return /^https?:\/\//i.test(s) || /^[\w-]+(\.[\w-]+)+.*$/.test(s);
 }
 
 /* ---------- speed dial ---------- */
-const TILE_COLORS = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6", "#14b8a6"];
+const TILE_COLORS = [
+  "linear-gradient(135deg,#6366f1,#8b5cf6)",
+  "linear-gradient(135deg,#0ea5e9,#22d3ee)",
+  "linear-gradient(135deg,#10b981,#34d399)",
+  "linear-gradient(135deg,#f59e0b,#fbbf24)",
+  "linear-gradient(135deg,#ef4444,#fb7185)",
+  "linear-gradient(135deg,#ec4899,#f472b6)",
+  "linear-gradient(135deg,#8b5cf6,#c084fc)",
+  "linear-gradient(135deg,#14b8a6,#2dd4bf)",
+];
 function colorFor(str) {
   let h = 0;
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
@@ -236,7 +275,6 @@ function renderDial() {
     dial.append(a);
   });
 }
-
 function normalizeUrl(u) { return /^https?:\/\//i.test(u) ? u : "https://" + u; }
 function hostOf(u) { try { return new URL(normalizeUrl(u)).hostname.replace(/^www\./, ""); } catch { return u; } }
 
@@ -246,7 +284,6 @@ function renderQuote() {
   q.hidden = !S.toggles.quote;
   if (!S.toggles.quote) return;
   const list = QUOTES[activeLangCode()] || QUOTES.en;
-  // deterministic per day so it feels intentional, not random noise
   const seed = Number(todayKey().replace(/-/g, ""));
   q.textContent = list[seed % list.length];
 }
@@ -256,7 +293,6 @@ function renderTodoCount() {
   const open = S.todos.filter((t) => !t.done).length;
   $("todoCount").textContent = open > 0 ? `${open}` : T.todoCountZero;
 }
-
 function renderTodoList() {
   const ul = $("todoList");
   ul.innerHTML = "";
@@ -281,6 +317,7 @@ function renderTodoList() {
 }
 
 /* ---------- pomodoro ---------- */
+const RING_CIRC = 2 * Math.PI * 52; // r=52 in the SVG
 const pomo = { min: 25, remaining: 25 * 60, running: false, timer: null };
 
 function renderPomo() {
@@ -288,8 +325,9 @@ function renderPomo() {
   const s = pomo.remaining % 60;
   $("pomoTime").textContent = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   $("pomoStart").textContent = pomo.running ? T.pomoPause : T.pomoStart;
+  const frac = pomo.remaining / (pomo.min * 60);
+  $("ringFill").style.strokeDashoffset = String(RING_CIRC * (1 - frac));
 }
-
 function pomoTick() {
   if (pomo.remaining <= 0) {
     pomoStop();
@@ -300,23 +338,14 @@ function pomoTick() {
   pomo.remaining--;
   renderPomo();
 }
-
 function pomoToggle() {
   if (pomo.running) { pomoStop(); return; }
   pomo.running = true;
   pomo.timer = setInterval(pomoTick, 1000);
   renderPomo();
 }
-function pomoStop() {
-  pomo.running = false;
-  clearInterval(pomo.timer);
-  renderPomo();
-}
-function pomoReset() {
-  pomoStop();
-  pomo.remaining = pomo.min * 60;
-  renderPomo();
-}
+function pomoStop() { pomo.running = false; clearInterval(pomo.timer); renderPomo(); }
+function pomoReset() { pomoStop(); pomo.remaining = pomo.min * 60; renderPomo(); }
 
 let titleTimer = null;
 function flashTitle(msg) {
@@ -334,7 +363,6 @@ function renderSettings() {
   renderLinkEditor();
   renderToggles();
 }
-
 function renderLinkEditor() {
   const box = $("linkEditor");
   box.innerHTML = "";
@@ -354,10 +382,9 @@ function renderLinkEditor() {
     box.append(row);
   });
 }
-
 const TOGGLE_KEYS = [
   { key: "dial", label: () => T.setLinks },
-  { key: "quote", label: () => "Quote" },
+  { key: "quote", label: () => T.tg_quote },
 ];
 function renderToggles() {
   const box = $("toggles");
@@ -387,28 +414,36 @@ function closePanels() {
   $("scrim").hidden = true;
 }
 
+/* ---------- onboarding ---------- */
+function maybeOnboard() {
+  if (S.firstRunDone) return;
+  $("onboard").hidden = false;
+  setTimeout(() => $("obName").focus(), 300);
+}
+function finishOnboard(name) {
+  if (name && name.trim()) { S.name = name.trim(); renderGreeting(); }
+  S.firstRunDone = true;
+  save();
+  $("onboard").hidden = true;
+  $("focusInput").focus();
+}
+
 /* ---------- events ---------- */
 function wireEvents() {
   // focus
   $("focusInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && $("focusInput").value.trim()) {
-      S.focus = { date: todayKey(), text: $("focusInput").value.trim() };
-      save();
-      renderFocus();
-    }
+    if (e.key === "Enter" && $("focusInput").value.trim()) setFocus($("focusInput").value);
   });
+  $("focusCheck").addEventListener("click", completeFocus);
   $("focusClear").addEventListener("click", () => {
-    S.focus = { date: "", text: "" };
+    S.focus = { date: "", text: "", done: false };
     save();
     renderFocus();
     $("focusInput").focus();
   });
 
   // search
-  $("searchForm").addEventListener("submit", (e) => {
-    e.preventDefault();
-    runSearch($("searchInput").value);
-  });
+  $("searchForm").addEventListener("submit", (e) => { e.preventDefault(); runSearch($("searchInput").value); });
 
   // todo
   $("todoBtn").addEventListener("click", () => { renderTodoList(); openPanel("todoPanel"); });
@@ -455,12 +490,16 @@ function wireEvents() {
     renderDial();
   });
 
+  // onboarding
+  $("obForm").addEventListener("submit", (e) => { e.preventDefault(); finishOnboard($("obName").value); });
+  $("obSkip").addEventListener("click", () => finishOnboard(""));
+
   // close controls
   document.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", closePanels));
   $("scrim").addEventListener("click", closePanels);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePanels(); });
 
-  // focus the search on "/" like power users expect
+  // "/" focuses search like power users expect
   document.addEventListener("keydown", (e) => {
     if (e.key === "/" && document.activeElement === document.body) {
       e.preventDefault();

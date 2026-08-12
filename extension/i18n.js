@@ -33,6 +33,12 @@ const I18N = {
     m_focus: "25 min",
     m_short: "5 min",
     m_long: "15 min",
+    tg_quote: "Daily quote",
+    ob_title: "Welcome to Dawn",
+    ob_sub: "A calm new tab that helps you focus. What should we call you?",
+    ob_placeholder: "Your name (optional)",
+    ob_go: "Begin",
+    ob_skip: "Skip for now",
   },
   ja: {
     dateFmt: { month: "long", day: "numeric", weekday: "long" },
@@ -66,6 +72,12 @@ const I18N = {
     m_focus: "25分",
     m_short: "5分",
     m_long: "15分",
+    tg_quote: "今日の名言",
+    ob_title: "Dawn へようこそ",
+    ob_sub: "集中を助ける、静かな新規タブ。なんて呼べばいい？",
+    ob_placeholder: "お名前（任意）",
+    ob_go: "はじめる",
+    ob_skip: "スキップ",
   },
   es: {
     dateFmt: { weekday: "long", day: "numeric", month: "long" },
@@ -99,6 +111,12 @@ const I18N = {
     m_focus: "25 min",
     m_short: "5 min",
     m_long: "15 min",
+    tg_quote: "Frase del día",
+    ob_title: "Bienvenido a Dawn",
+    ob_sub: "Una nueva pestaña tranquila para ayudarte a concentrarte. ¿Cómo te llamas?",
+    ob_placeholder: "Tu nombre (opcional)",
+    ob_go: "Empezar",
+    ob_skip: "Ahora no",
   },
 };
 
