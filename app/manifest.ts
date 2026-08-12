@@ -2,15 +2,14 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "hina — 5秒だけのSNS",
-    short_name: "hina",
+    name: "Dawn — a calm new tab",
+    short_name: "Dawn",
     description:
-      "5秒の動画だけをスワイプするSNS。押した秒数に刻まれる「Pulse」体験。",
+      "A calm, private new tab with a Liquid Glass design. 100% on-device.",
     start_url: "/",
     display: "standalone",
-    orientation: "portrait",
-    background_color: "#050507",
-    theme_color: "#050507",
+    background_color: "#10203f",
+    theme_color: "#10203f",
     icons: [
       {
         src: "/icon.svg",

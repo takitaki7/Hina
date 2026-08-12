@@ -1,60 +1,57 @@
-# hina — 5秒だけのSNS 🎬
+# Dawn — a calm new tab 🌅
 
-TikTokを「5秒だけ」に振り切った、縦スワイプの動画SNS。
-撮るのは5秒。観るのも5秒。だから、ぜんぶ一瞬で伝わる。
+**Start every new tab with a breath of focus.**
 
-## コンセプト
+Dawn is a global, **English-first** Chrome extension (Manifest V3) that replaces
+the new-tab page with a calm, **Liquid Glass** dashboard: a big clock, a living
+time-of-day gradient, a daily *one focus* with a completion **streak**, quick
+search, speed-dial links, a to-do list, and a Pomodoro timer. Everything runs
+**100% on your device** — no account, no server, no tracking.
 
-- **5秒の縦動画だけ** — 撮影は自動で5秒ストップ。フィードは上下スワイプの全画面
-- **バックエンド不要** — 動画は端末内（IndexedDB）に保存。Vercelにそのままデプロイして動く
+![Dawn](./extension/store/screenshot-1.png)
 
-## 新要素：Pulse（5秒シンク・リアクション）
+## What's in this repo
 
-すべてのクリップが**きっかり5秒**という制約を逆手に取った仕組み。
+| Path | What it is |
+| --- | --- |
+| [`extension/`](./extension) | The Chrome extension — plain HTML/CSS/JS, no build step. **This is the product.** |
+| `public/dawn/`, `scripts/sync-demo.mjs` | A tiny Next.js host that serves the extension as a **live web demo** on Vercel. |
+| `app/`, `next.config.mjs`, `vercel.json` | Next.js glue: the site root (`/`) and `/dawn` both render the Dawn demo. |
 
-- いいね（ダブルタップ）は**押した瞬間の秒数（0〜5秒）に刻まれる**
-- みんなの反応が**再生位置に同期して蘇る**（絵文字が当時のタイミングで舞う）
-- 5秒シークバー上に**盛り上がりピーク**が光り、「みんながどこで沸いたか」が見える
+The extension is the single source of truth; `scripts/sync-demo.mjs` copies its
+static files into `public/dawn/` before every build so the demo can't drift.
 
-## 機能（TikTok準拠）
+## Try the extension
 
-- **フィード**：おすすめ / フォロー中（フォローした人だけ表示）
-- **撮影**：カメラ録画（5秒自動停止）＋ 動画アップロード
-- **いいね / コメント / 保存 / シェア**（Web Share ＋ リンクコピー）
-- **フォロー / フォロー解除**
-- **プロフィール**：自分・他人、統計（フォロー/フォロワー/いいね）、投稿・保存グリッド、プロフィール編集
-- **さがす**：ユーザー・キャプション検索、急上昇グリッド
-- **受信箱**：いいね/コメント/フォローの通知
-- 下部タブバーで各画面を行き来（TikTokの二色＋ボタンで撮影）
+1. Open `chrome://extensions`
+2. Enable **Developer mode** (top-right)
+3. **Load unpacked** → select the [`extension/`](./extension) folder
+4. Open a new tab 🎉
 
-## 実機・品質
+Works in any Chromium browser (Chrome, Edge, Brave, Arc, Opera).
 
-- モバイルファースト、セーフエリア（ノッチ/ホームバー）対応
-- `prefers-reduced-motion` 尊重、PWA manifest / アイコン / OGメタ
-- 保存先：メタデータは `localStorage`、動画Blobは IndexedDB
+## Live web demo (Vercel)
 
-## 技術構成
-
-- [Next.js 15](https://nextjs.org/) (App Router) + React 19 / TypeScript / Tailwind CSS v4
-- 録画は **MediaRecorder**、永続化は **IndexedDB + localStorage**
+A Chrome extension isn't a website, but Dawn is plain static HTML/CSS/JS and
+falls back from `chrome.storage` to `localStorage`, so it runs unchanged on the
+web. After deploy it's live at:
 
 ```
-app/          layout / page / globals.css / manifest / icon
-components/   HinaApp(ルート) / Feed / ClipCard / Recorder / CommentsSheet
-              Profile / Discover / Inbox / BottomNav
-lib/          types / seed / store / db(IndexedDB) / time
+https://<your-vercel-domain>/          (root)
+https://<your-vercel-domain>/dawn      (same page)
 ```
 
-## 開発
+## Develop
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000
+npm run dev        # http://localhost:3000  → serves the Dawn demo
+npm run sync:demo  # re-copy extension/ → public/dawn (also runs on build)
 ```
 
-> カメラ録画は https 環境（Vercel など）と `http://localhost` で動作します。
+See [`extension/README.md`](./extension/README.md) for the full feature list,
+the near-zero operating-cost breakdown, and the acquisition thesis.
 
-## Vercel へのデプロイ
+## License
 
-このリポジトリを import するだけ（`vercel.json` で Next.js を明示済み）。
-環境変数・DB設定は不要です。
+MIT.

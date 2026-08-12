@@ -1,26 +1,26 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-const title = "hina — 5秒だけのSNS";
+const title = "Dawn — a calm new tab";
 const description =
-  "5秒の動画だけをスワイプするSNS。リアクションは押した秒数に固定され、みんなの盛り上がりが再生に同期して蘇る「Pulse」体験。";
+  "A calm, private new tab with a Liquid Glass design: clock, daily focus with streaks, to-dos, a Pomodoro timer, quick links and search. 100% on-device.";
 
 export const metadata: Metadata = {
   title,
   description,
-  applicationName: "hina",
+  applicationName: "Dawn",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "hina",
+    title: "Dawn",
   },
   openGraph: {
     title,
     description,
-    siteName: "hina",
+    siteName: "Dawn",
     type: "website",
-    locale: "ja_JP",
+    locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
@@ -31,11 +31,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#050507",
+  themeColor: "#10203f",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
 };
 
@@ -45,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ja">
+    <html lang="en">
       <body>{children}</body>
     </html>
   );
