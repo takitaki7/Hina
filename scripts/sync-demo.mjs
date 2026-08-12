@@ -19,7 +19,6 @@ const FILES = [
   "newtab.css",
   "newtab.js",
   "i18n.js",
-  "quotes.js",
   "icons/icon32.png",
   "icons/icon128.png",
   "fonts/inter.woff2",

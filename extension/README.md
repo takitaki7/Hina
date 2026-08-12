@@ -84,18 +84,15 @@ acquisition.
 - **Clock** in glass, **12/24‑hour** with optional **seconds**
 - **One focus** — a single, always‑editable intention. Write it, change it any
   time. No streaks, no pressure.
-- **Weather (opt‑in)** — a glass chip with your city's current conditions via
-  the free, keyless [Open‑Meteo](https://open-meteo.com) API. Off by default.
 - **Backgrounds** — pick from calm light & dark presets, **Auto**, or set any
   **Custom** gradient; the UI switches to readable dark/light text automatically
 - **Quick search** — Google / Bing / DuckDuckGo / Ecosia / Brave, URL‑aware
 - **Speed dial**, **To‑do list**, **Quick Notes** — lightweight, local, auto‑saved
 - **Pomodoro** — auto‑cycling focus / break with session dots, a glass ring and
-  a gentle WebAudio chime (mutable)
-- **Daily quote**, **warm onboarding**
+  a gentle WebAudio chime (mutable); the **live countdown shows on the main page**
+- **Warm onboarding**
 - **English‑first**, with 日本語 and Español built in (switchable any time)
-- **Privacy by design** — no accounts, no analytics. The only network request
-  is the opt‑in weather lookup (only when you turn it on).
+- **Privacy by design** — no accounts, no network calls, no analytics
 
 Keyboard: press <kbd>/</kbd> to jump to search, <kbd>Esc</kbd> to close panels.
 
@@ -152,14 +149,9 @@ No framework, no bundler, no `npm install`. Edit a file, reload the extension.
 ## Privacy
 
 Hina stores your name, focus, to‑dos, notes, links and preferences **only** in
-your browser via `chrome.storage.local`. By default it makes **no network
-requests**. Searches and link clicks navigate to the destination *you* chose.
-
-The **only** exception is the optional **Weather** feature: when you turn it on
-and enter a city, Hina calls the free, keyless [Open‑Meteo](https://open-meteo.com)
-API to turn that city name into coordinates and fetch current conditions. No
-account, no personal data, no tracking identifiers are sent — just the city you
-typed. Leave Weather off and Hina stays 100% on‑device.
+your browser via `chrome.storage.local`. It makes **no network requests** of its
+own. Searches and link clicks navigate to the destination *you* chose, exactly
+as typing them into the address bar would.
 
 ## License
 
