@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
       "A calm, private new tab with a Liquid Glass design. 100% on-device.",
     start_url: "/",
     display: "standalone",
-    background_color: "#10203f",
-    theme_color: "#10203f",
+    background_color: "#e9f6ff",
+    theme_color: "#7db9f0",
     icons: [
       {
         src: "/icon.svg",

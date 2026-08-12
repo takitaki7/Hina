@@ -19,7 +19,7 @@ const DEFAULTS = {
   name: "",
   lang: "en", // English-first; users can switch to Auto / 日本語 / Español
   engine: "google",
-  bg: { mode: "preset", preset: "plum", c1: "#5b4bd6", c2: "#28c8d2" },
+  bg: { mode: "preset", preset: "sky", c1: "#7db9f0", c2: "#eaf6ff" },
   links: [
     { name: "Gmail", url: "https://mail.google.com" },
     { name: "YouTube", url: "https://youtube.com" },
@@ -196,19 +196,22 @@ function renderClock() {
   applyTheme();
 }
 
-/* ---------- background palette ---------- */
+/* ---------- background palette ----------
+   Each palette: { s: [3 gradient stops], tone: "light" | "dark" }.
+   Light palettes flip the UI to dark text for readability. */
 const PALETTES = {
-  plum:     ["#1a1140", "#4a2a7a", "#8f5bd0"],
-  twilight: ["#241b46", "#5b3a72", "#c76b83"],
-  aurora:   ["#04121f", "#0b3d4a", "#1f9d7a"],
-  ocean:    ["#081a34", "#123a6b", "#3a86c8"],
-  ember:    ["#1b1236", "#742f52", "#e0894f"],
-  rose:     ["#221436", "#5e2f6e", "#d06a92"],
-  forest:   ["#0c2016", "#1c4a34", "#4a9060"],
-  midnight: ["#05060f", "#12172e", "#243056"],
-  graphite: ["#101014", "#26262e", "#44444e"],
+  sky:      { s: ["#79b8f2", "#a9d8f2", "#e9f6ff"], tone: "light" },
+  daylight: { s: ["#8fc7f2", "#c6e2f6", "#ffffff"], tone: "light" },
+  sea:      { s: ["#7fd0d8", "#b6ecec", "#eafcff"], tone: "light" },
+  sunrise:  { s: ["#ffc9b0", "#ffe0cf", "#fff6ef"], tone: "light" },
+  mist:     { s: ["#cdd8e6", "#e6ecf3", "#ffffff"], tone: "light" },
+  meadow:   { s: ["#bfe3a8", "#dcefc8", "#f4fbe9"], tone: "light" },
+  midnight: { s: ["#05060f", "#12172e", "#243056"], tone: "dark" },
+  aurora:   { s: ["#04121f", "#0b3d4a", "#1f9d7a"], tone: "dark" },
+  forest:   { s: ["#0c2016", "#1c4a34", "#4a9060"], tone: "dark" },
+  graphite: { s: ["#101014", "#26262e", "#44444e"], tone: "dark" },
 };
-const PALETTE_ORDER = ["plum", "twilight", "aurora", "ocean", "ember", "rose", "forest", "midnight", "graphite"];
+const PALETTE_ORDER = ["sky", "daylight", "sea", "sunrise", "mist", "meadow", "midnight", "aurora", "forest", "graphite"];
 
 function hexToRgb(h) { h = h.replace("#", ""); return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); }
 function rgbToHex(a) { return "#" + a.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join(""); }
@@ -238,22 +241,32 @@ function deriveBlobs([a, b, c]) { return [adjust(c, 10, 8), adjust(b, 6, 4, -8),
 
 function autoPreset() {
   const h = new Date().getHours();
-  if (h >= 5 && h < 8) return "ember";
-  if (h >= 8 && h < 16) return "ocean";
-  if (h >= 16 && h < 19) return "ember";
-  if (h >= 19 && h < 22) return "plum";
+  if (h >= 5 && h < 8) return "sunrise";
+  if (h >= 8 && h < 17) return "sky";
+  if (h >= 17 && h < 20) return "daylight";
   return "midnight";
 }
-function stopsFor(bg) {
-  if (bg.mode === "custom") return [bg.c1, mixHex(bg.c1, bg.c2, 0.5), bg.c2];
+function luminance(hex) {
+  const [r, g, b] = hexToRgb(hex).map((v) => {
+    v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function toneForStops(s) {
+  const avg = (luminance(s[0]) + luminance(s[1]) + luminance(s[2])) / 3;
+  return avg > 0.5 ? "light" : "dark";
+}
+function paletteFor(bg) {
+  if (bg.mode === "custom") { const s = [bg.c1, mixHex(bg.c1, bg.c2, 0.5), bg.c2]; return { s, tone: toneForStops(s) }; }
   if (bg.mode === "auto") return PALETTES[autoPreset()];
-  return PALETTES[bg.preset] || PALETTES.plum;
+  return PALETTES[bg.preset] || PALETTES.sky;
 }
 function applyTheme() {
-  const stops = stopsFor(S.bg);
+  const p = paletteFor(S.bg);
   const r = document.documentElement.style;
-  r.setProperty("--bg1", stops[0]); r.setProperty("--bg2", stops[1]); r.setProperty("--bg3", stops[2]);
-  deriveBlobs(stops).forEach((cl, i) => r.setProperty(`--blob${i + 1}`, cl));
+  r.setProperty("--bg1", p.s[0]); r.setProperty("--bg2", p.s[1]); r.setProperty("--bg3", p.s[2]);
+  deriveBlobs(p.s).forEach((cl, i) => r.setProperty(`--blob${i + 1}`, cl));
+  document.documentElement.dataset.tone = p.tone;
 }
 
 function renderGreeting() {
@@ -555,8 +568,8 @@ function renderPalette() {
     b.addEventListener("click", () => selectPalette(key));
     box.append(b);
   };
-  PALETTE_ORDER.forEach((k) => swatch(k, PALETTES[k]));
-  swatch("auto", PALETTES[autoPreset()], "◐");
+  PALETTE_ORDER.forEach((k) => swatch(k, PALETTES[k].s));
+  swatch("auto", PALETTES[autoPreset()].s, "◐");
   swatch("custom", [S.bg.c1, mixHex(S.bg.c1, S.bg.c2, 0.5), S.bg.c2], "✎");
   $("customRow").hidden = S.bg.mode !== "custom";
   $("ccTop").value = S.bg.c1;
