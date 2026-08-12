@@ -77,22 +77,25 @@ acquisition.
 ## Features
 
 - **Liquid‑Glass UI** — translucent refractive panels with a real
-  displacement‑lens backdrop, specular edges, a **cursor‑tracked highlight**
-  that follows your pointer, an animated mesh‑gradient backdrop and film grain
-- **Simple “H” glass logo** — a frosted glass mark used across the icon set
-- **Clock & date** with a gradient that shifts through dawn → day → golden hour → dusk → night, **12/24‑hour** and optional **seconds**
-- **Today's one focus** — a single intention that resets each day, with a
-  **completion streak (🔥)**, best‑streak record and lifetime‑completed stats
-- **Warm onboarding** — a one‑time welcome that personalizes the greeting
+  displacement‑lens backdrop, specular edges, a **cursor‑tracked highlight**,
+  **glass clock numerals**, a mesh‑gradient backdrop and film grain
+- **Bundled Inter font** — one clean, SF‑like typeface across the whole UI
+- **Translucent glass “H” logo** — the gradient shows through the mark
+- **Clock** in glass, **12/24‑hour** with optional **seconds**
+- **One focus** — a single, always‑editable intention. Write it, change it any
+  time. No streaks, no pressure.
+- **Weather (opt‑in)** — a glass chip with your city's current conditions via
+  the free, keyless [Open‑Meteo](https://open-meteo.com) API. Off by default.
+- **Backgrounds** — pick from calm light & dark presets, **Auto**, or set any
+  **Custom** gradient; the UI switches to readable dark/light text automatically
 - **Quick search** — Google / Bing / DuckDuckGo / Ecosia / Brave, URL‑aware
-- **Speed dial** — your favorite links as glossy tiles (fully editable)
-- **To‑do list** and **Quick Notes** — lightweight, local, auto‑saved
-- **Pomodoro** — auto‑cycling focus / break with session dots, a glass progress
-  ring and a gentle WebAudio chime (mutable)
-- **Daily quote** — a gentle nudge, bundled offline
-- **Themes** — follow the time of day, or pick Aurora / Dusk / Forest / Mono
+- **Speed dial**, **To‑do list**, **Quick Notes** — lightweight, local, auto‑saved
+- **Pomodoro** — auto‑cycling focus / break with session dots, a glass ring and
+  a gentle WebAudio chime (mutable)
+- **Daily quote**, **warm onboarding**
 - **English‑first**, with 日本語 and Español built in (switchable any time)
-- **Privacy by design** — no accounts, no network calls, no analytics
+- **Privacy by design** — no accounts, no analytics. The only network request
+  is the opt‑in weather lookup (only when you turn it on).
 
 Keyboard: press <kbd>/</kbd> to jump to search, <kbd>Esc</kbd> to close panels.
 
@@ -148,10 +151,15 @@ No framework, no bundler, no `npm install`. Edit a file, reload the extension.
 
 ## Privacy
 
-Hina stores your name, focus, to‑dos, links and preferences **only** in your
-browser via `chrome.storage.local`. It makes **no network requests** of its
-own. Searches and link clicks navigate to the destination *you* chose, exactly
-as typing them into the address bar would.
+Hina stores your name, focus, to‑dos, notes, links and preferences **only** in
+your browser via `chrome.storage.local`. By default it makes **no network
+requests**. Searches and link clicks navigate to the destination *you* chose.
+
+The **only** exception is the optional **Weather** feature: when you turn it on
+and enter a city, Hina calls the free, keyless [Open‑Meteo](https://open-meteo.com)
+API to turn that city name into coordinates and fetch current conditions. No
+account, no personal data, no tracking identifiers are sent — just the city you
+typed. Leave Weather off and Hina stays 100% on‑device.
 
 ## License
 

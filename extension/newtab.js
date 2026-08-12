@@ -27,11 +27,10 @@ const DEFAULTS = {
     { name: "Calendar", url: "https://calendar.google.com" },
     { name: "Maps", url: "https://maps.google.com" },
   ],
-  focus: { date: "", text: "", done: false },
-  streak: { count: 0, last: "", best: 0 }, // consecutive days a focus was completed
-  stats: { completed: 0 },                 // lifetime focuses completed
+  focusText: "",                            // an intention you can edit anytime
   todos: [],
   notes: "",
+  weather: { on: false, city: "", unit: "c", place: null, data: null, ts: 0 },
   toggles: { quote: true, dial: true, clock24: true, seconds: false, chime: true },
   firstRunDone: false,
 };
@@ -72,11 +71,13 @@ function save() { store.set(S); }
 (async function init() {
   const saved = await store.get();
   S = deepMerge(structuredClone(DEFAULTS), saved);
+  if (!S.focusText && saved.focus && saved.focus.text) S.focusText = saved.focus.text; // migrate old shape
   applyLang();
   renderAll();
   startClock();
   wireEvents();
   wireGlass();
+  refreshWeather();
   maybeOnboard();
 })();
 
@@ -126,13 +127,11 @@ function renderAll() {
   renderDial();
   renderQuote();
   renderTodoCount();
+  renderWeather();
 }
 
 function renderStaticText() {
-  $("focusAsk").textContent = T.focusAsk;
   $("focusInput").placeholder = T.focusPlaceholder;
-  $("focusHint").textContent = T.focusHint;
-  $("focusClear").textContent = T.focusClear;
   $("searchInput").placeholder = T.searchPlaceholder;
   $("todoTitle").textContent = T.todoTitle;
   $("todoInput").placeholder = T.todoAdd;
@@ -149,6 +148,8 @@ function renderStaticText() {
   $("setThemeLabel").textContent = T.setTheme;
   $("ccTopLabel").textContent = T.ccTop;
   $("ccBotLabel").textContent = T.ccBot;
+  $("setWeatherLabel").textContent = T.setWeather;
+  $("weatherCity").placeholder = T.weatherCity;
   $("setLinksLabel").textContent = T.setLinks;
   $("privacyNote").textContent = T.privacy;
   $("obTitle").textContent = T.ob_title;
@@ -171,13 +172,13 @@ function scheduleClock() {
   clearTimeout(clockAlign);
   renderClock();
   if (S.toggles.seconds) {
-    clockTimer = setInterval(() => { renderClock(); renderGreeting(); renderFocus(); }, 1000);
+    clockTimer = setInterval(() => { renderClock(); renderGreeting(); }, 1000);
   } else {
     const now = new Date();
     const ms = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
     clockAlign = setTimeout(() => {
-      renderClock(); renderGreeting(); renderFocus();
-      clockTimer = setInterval(() => { renderClock(); renderGreeting(); renderFocus(); }, 60000);
+      renderClock(); renderGreeting();
+      clockTimer = setInterval(() => { renderClock(); renderGreeting(); }, 60000);
     }, ms);
   }
 }
@@ -237,7 +238,7 @@ function adjust(hex, dL, dS, dH = 0) {
   return rgbToHex(hslToRgb([h, s, l]));
 }
 function mixHex(a, c, t) { const A = hexToRgb(a), C = hexToRgb(c); return rgbToHex(A.map((v, i) => v + (C[i] - v) * t)); }
-function deriveBlobs([a, b, c]) { return [adjust(c, 10, 8), adjust(b, 6, 4, -8), adjust(c, 18, -2, 12), adjust(b, 12, 6, 6)]; }
+function deriveBlobs([a, b, c]) { return [adjust(c, 6, 22, 4), adjust(b, 2, 18, -12), adjust(c, 14, 14, 16), adjust(a, 24, 20, 8)]; }
 
 function autoPreset() {
   const h = new Date().getHours();
@@ -279,54 +280,10 @@ function renderGreeting() {
   $("greeting").textContent = S.name ? `${g}, ${S.name}.` : `${g}.`;
 }
 
-/* ---------- focus + streak ---------- */
+/* ---------- focus (an always-editable intention) ---------- */
 function renderFocus() {
-  const active = S.focus.date === todayKey() && S.focus.text;
-  $("focusInput").hidden = !!active;
-  $("focusAsk").hidden = !!active;
-  $("focusHint").hidden = !!active;
-  $("focusDone").hidden = !active;
-  $("focusHelp").hidden = !active;
-  const s = $("streak");
-  if (active) {
-    $("focusText").textContent = S.focus.text;
-    $("focusDone").classList.toggle("done", !!S.focus.done);
-    $("focusCheck").textContent = S.focus.done ? "✓" : "";
-    if (S.streak.count > 0) {
-      s.hidden = false;
-      s.textContent = `🔥 ${S.streak.count}`;
-      s.title = `${T.streakBest}: ${S.streak.best || S.streak.count}`;
-    } else s.hidden = true;
-    // explain the streak rule right where it matters
-    $("focusHelp").textContent = S.focus.done
-      ? `🔥 ${S.streak.count} ${T.focusHelpDone}`
-      : T.focusHelpTodo;
-  } else {
-    $("focusInput").value = "";
-    s.hidden = true;
-  }
-}
-
-function setFocus(text) {
-  S.focus = { date: todayKey(), text: text.trim(), done: false };
-  save();
-  renderFocus();
-}
-
-function completeFocus() {
-  const nowDone = !S.focus.done;
-  S.focus.done = nowDone;
-  if (nowDone) {
-    S.stats.completed = (S.stats.completed || 0) + 1;
-    if (S.streak.last !== todayKey()) {
-      // advance the streak at most once per day
-      S.streak.count = S.streak.last === dayKey(-1) ? S.streak.count + 1 : 1;
-      S.streak.last = todayKey();
-    }
-    S.streak.best = Math.max(S.streak.best || 0, S.streak.count);
-  }
-  save();
-  renderFocus();
+  const el = $("focusInput");
+  if (document.activeElement !== el) el.value = S.focusText || "";
 }
 
 /* ---------- search ---------- */
@@ -544,9 +501,9 @@ function renderSettings() {
   $("setEngine").value = S.engine;
   $("setLang").value = S.lang;
   renderPalette();
+  renderWeatherSettings();
   renderLinkEditor();
   renderToggles();
-  renderStats();
 }
 
 /* ---------- background palette picker ---------- */
@@ -594,12 +551,74 @@ function markCustomActive() {
       `linear-gradient(145deg, ${S.bg.c1}, ${mixHex(S.bg.c1, S.bg.c2, 0.5)} 50%, ${S.bg.c2})`;
   }
 }
-function renderStats() {
-  const best = S.streak.best || 0;
-  const done = S.stats.completed || 0;
-  $("setStats").textContent = done > 0 || best > 0
-    ? `🔥 ${T.streakBest}: ${best}  ·  ✓ ${done} ${T.statsDone}`
-    : "";
+function renderWeatherSettings() {
+  $("setWeather").checked = !!S.weather.on;
+  $("weatherCity").value = S.weather.city || "";
+  $("weatherCfg").hidden = !S.weather.on;
+  document.querySelectorAll("#weatherCfg .unit-btn").forEach((b) =>
+    b.classList.toggle("active", b.dataset.unit === S.weather.unit));
+  $("weatherStatus").textContent = S.weather.place ? S.weather.place.name : "";
+}
+
+/* ---------- weather (opt-in · Open-Meteo · no key, only when enabled) ---------- */
+const WCODE = {
+  0: ["☀️", "Clear"], 1: ["🌤️", "Mainly clear"], 2: ["⛅", "Partly cloudy"], 3: ["☁️", "Overcast"],
+  45: ["🌫️", "Fog"], 48: ["🌫️", "Rime fog"],
+  51: ["🌦️", "Light drizzle"], 53: ["🌦️", "Drizzle"], 55: ["🌦️", "Dense drizzle"],
+  61: ["🌧️", "Light rain"], 63: ["🌧️", "Rain"], 65: ["🌧️", "Heavy rain"],
+  66: ["🌧️", "Freezing rain"], 67: ["🌧️", "Freezing rain"],
+  71: ["🌨️", "Light snow"], 73: ["🌨️", "Snow"], 75: ["❄️", "Heavy snow"], 77: ["❄️", "Snow grains"],
+  80: ["🌦️", "Showers"], 81: ["🌦️", "Showers"], 82: ["⛈️", "Violent showers"],
+  85: ["🌨️", "Snow showers"], 86: ["🌨️", "Snow showers"],
+  95: ["⛈️", "Thunderstorm"], 96: ["⛈️", "Thunderstorm"], 99: ["⛈️", "Thunderstorm"],
+};
+function wInfo(code) { return WCODE[code] || ["🌡️", ""]; }
+function renderWeather() {
+  const chip = $("weatherChip");
+  if (!S.weather.on || !S.weather.data) { chip.hidden = true; return; }
+  const [emoji, label] = wInfo(S.weather.data.code);
+  chip.hidden = false;
+  chip.innerHTML = `<span class="w-emoji">${emoji}</span><span class="w-temp">${Math.round(S.weather.data.temp)}°</span>`;
+  chip.title = (S.weather.place ? S.weather.place.name + " · " : "") + label;
+}
+async function geocodeCity(city) {
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`;
+  const j = await (await fetch(url)).json();
+  if (!j.results || !j.results.length) throw new Error("not found");
+  const g = j.results[0];
+  return { name: [g.name, g.country_code].filter(Boolean).join(", "), lat: g.latitude, lon: g.longitude };
+}
+async function fetchWeather() {
+  const p = S.weather.place;
+  if (!p) return;
+  const unit = S.weather.unit === "f" ? "fahrenheit" : "celsius";
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,weather_code&temperature_unit=${unit}`;
+  const c = (await (await fetch(url)).json()).current;
+  S.weather.data = { temp: c.temperature_2m, code: c.weather_code };
+  S.weather.ts = Date.now();
+  save();
+  renderWeather();
+}
+async function refreshWeather() {
+  if (!S.weather.on || !S.weather.place) return;
+  const fresh = Date.now() - (S.weather.ts || 0) < 30 * 60 * 1000;
+  if (S.weather.data && fresh) { renderWeather(); return; }
+  try { await fetchWeather(); } catch { renderWeather(); }
+}
+async function applyWeatherCity(city) {
+  city = city.trim();
+  S.weather.city = city;
+  if (!city) { S.weather.place = null; S.weather.data = null; save(); renderWeather(); $("weatherStatus").textContent = ""; return; }
+  $("weatherStatus").textContent = T.weatherLoading;
+  try {
+    S.weather.place = await geocodeCity(city);
+    save();
+    $("weatherStatus").textContent = S.weather.place.name;
+    await fetchWeather();
+  } catch {
+    S.weather.place = null; S.weather.data = null; save(); renderWeather();
+    $("weatherStatus").textContent = T.weatherNotFound;
+  }
 }
 function renderLinkEditor() {
   const box = $("linkEditor");
@@ -678,17 +697,17 @@ function finishOnboard(name) {
 
 /* ---------- events ---------- */
 function wireEvents() {
-  // focus
+  // focus — an intention you can write and edit anytime
+  let focusTimer = null;
+  $("focusInput").addEventListener("input", () => {
+    S.focusText = $("focusInput").value;
+    clearTimeout(focusTimer);
+    focusTimer = setTimeout(save, 400);
+  });
   $("focusInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && $("focusInput").value.trim()) setFocus($("focusInput").value);
+    if (e.key === "Enter") { S.focusText = $("focusInput").value; save(); $("focusInput").blur(); }
   });
-  $("focusCheck").addEventListener("click", completeFocus);
-  $("focusClear").addEventListener("click", () => {
-    S.focus = { date: "", text: "", done: false };
-    save();
-    renderFocus();
-    $("focusInput").focus();
-  });
+  $("focusInput").addEventListener("blur", () => { S.focusText = $("focusInput").value; save(); });
 
   // search
   $("searchForm").addEventListener("submit", (e) => { e.preventDefault(); runSearch($("searchInput").value); });
@@ -731,6 +750,23 @@ function wireEvents() {
   $("setLang").addEventListener("change", () => { S.lang = $("setLang").value; save(); applyLang(); renderAll(); });
   $("ccTop").addEventListener("input", () => { S.bg.c1 = $("ccTop").value; S.bg.mode = "custom"; save(); applyTheme(); markCustomActive(); });
   $("ccBot").addEventListener("input", () => { S.bg.c2 = $("ccBot").value; S.bg.mode = "custom"; save(); applyTheme(); markCustomActive(); });
+
+  // weather (opt-in)
+  $("setWeather").addEventListener("change", () => {
+    S.weather.on = $("setWeather").checked;
+    save();
+    $("weatherCfg").hidden = !S.weather.on;
+    if (S.weather.on) {
+      if (S.weather.place) refreshWeather();
+      else if (S.weather.city) applyWeatherCity(S.weather.city);
+    }
+    renderWeather();
+  });
+  $("weatherCity").addEventListener("change", () => applyWeatherCity($("weatherCity").value));
+  $("weatherCity").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); applyWeatherCity($("weatherCity").value); } });
+  document.querySelectorAll("#weatherCfg .unit-btn").forEach((b) =>
+    b.addEventListener("click", () => { S.weather.unit = b.dataset.unit; save(); renderWeatherSettings(); fetchWeather().catch(() => {}); }));
+  $("weatherChip").addEventListener("click", () => { renderSettings(); openPanel("settingsPanel"); });
   $("linkAddForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const name = $("linkName").value.trim();
