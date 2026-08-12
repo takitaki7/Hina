@@ -19,7 +19,7 @@ const DEFAULTS = {
   name: "",
   lang: "en", // English-first; users can switch to Auto / 日本語 / Español
   engine: "google",
-  theme: "time",
+  bg: { mode: "preset", preset: "plum", c1: "#5b4bd6", c2: "#28c8d2" },
   links: [
     { name: "Gmail", url: "https://mail.google.com" },
     { name: "YouTube", url: "https://youtube.com" },
@@ -131,6 +131,7 @@ function renderAll() {
 function renderStaticText() {
   $("focusAsk").textContent = T.focusAsk;
   $("focusInput").placeholder = T.focusPlaceholder;
+  $("focusHint").textContent = T.focusHint;
   $("focusClear").textContent = T.focusClear;
   $("searchInput").placeholder = T.searchPlaceholder;
   $("todoTitle").textContent = T.todoTitle;
@@ -146,6 +147,8 @@ function renderStaticText() {
   $("setEngineLabel").textContent = T.setEngine;
   $("setLangLabel").textContent = T.setLang;
   $("setThemeLabel").textContent = T.setTheme;
+  $("ccTopLabel").textContent = T.ccTop;
+  $("ccBotLabel").textContent = T.ccBot;
   $("setLinksLabel").textContent = T.setLinks;
   $("privacyNote").textContent = T.privacy;
   $("obTitle").textContent = T.ob_title;
@@ -193,24 +196,64 @@ function renderClock() {
   applyTheme();
 }
 
-function applyTheme() {
-  const bg = $("bg");
-  bg.className = "bg";
-  let cls;
-  if (S.theme === "aurora") cls = "t-aurora";
-  else if (S.theme === "dusk") cls = "t-dusk";
-  else if (S.theme === "forest") cls = "t-forest";
-  else if (S.theme === "mono") cls = "t-mono";
-  else cls = timeClass(new Date().getHours());
-  bg.classList.add(cls);
-}
+/* ---------- background palette ---------- */
+const PALETTES = {
+  plum:     ["#1a1140", "#4a2a7a", "#8f5bd0"],
+  twilight: ["#241b46", "#5b3a72", "#c76b83"],
+  aurora:   ["#04121f", "#0b3d4a", "#1f9d7a"],
+  ocean:    ["#081a34", "#123a6b", "#3a86c8"],
+  ember:    ["#1b1236", "#742f52", "#e0894f"],
+  rose:     ["#221436", "#5e2f6e", "#d06a92"],
+  forest:   ["#0c2016", "#1c4a34", "#4a9060"],
+  midnight: ["#05060f", "#12172e", "#243056"],
+  graphite: ["#101014", "#26262e", "#44444e"],
+};
+const PALETTE_ORDER = ["plum", "twilight", "aurora", "ocean", "ember", "rose", "forest", "midnight", "graphite"];
 
-function timeClass(h) {
-  if (h >= 5 && h < 8) return "t-dawn";
-  if (h >= 8 && h < 16) return "t-day";
-  if (h >= 16 && h < 19) return "t-golden";
-  if (h >= 19 && h < 22) return "t-dusk";
-  return "t-night";
+function hexToRgb(h) { h = h.replace("#", ""); return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); }
+function rgbToHex(a) { return "#" + a.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join(""); }
+function rgbToHsl([r, g, b]) {
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h, s, l = (mx + mn) / 2;
+  if (mx === mn) { h = s = 0; }
+  else { const d = mx - mn; s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+    switch (mx) { case r: h = (g - b) / d + (g < b ? 6 : 0); break; case g: h = (b - r) / d + 2; break; default: h = (r - g) / d + 4; } h /= 6; }
+  return [h * 360, s * 100, l * 100];
+}
+function hslToRgb([h, s, l]) {
+  h /= 360; s /= 100; l /= 100; let r, g, b;
+  if (s === 0) { r = g = b = l; }
+  else { const q = l < 0.5 ? l * (1 + s) : l + s - l * s; const p = 2 * l - q;
+    const f = (t) => { if (t < 0) t += 1; if (t > 1) t -= 1; if (t < 1 / 6) return p + (q - p) * 6 * t; if (t < 1 / 2) return q; if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6; return p; };
+    r = f(h + 1 / 3); g = f(h); b = f(h - 1 / 3); }
+  return [r * 255, g * 255, b * 255];
+}
+function adjust(hex, dL, dS, dH = 0) {
+  let [h, s, l] = rgbToHsl(hexToRgb(hex));
+  h = (h + dH + 360) % 360; s = Math.max(0, Math.min(100, s + dS)); l = Math.max(0, Math.min(100, l + dL));
+  return rgbToHex(hslToRgb([h, s, l]));
+}
+function mixHex(a, c, t) { const A = hexToRgb(a), C = hexToRgb(c); return rgbToHex(A.map((v, i) => v + (C[i] - v) * t)); }
+function deriveBlobs([a, b, c]) { return [adjust(c, 10, 8), adjust(b, 6, 4, -8), adjust(c, 18, -2, 12), adjust(b, 12, 6, 6)]; }
+
+function autoPreset() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 8) return "ember";
+  if (h >= 8 && h < 16) return "ocean";
+  if (h >= 16 && h < 19) return "ember";
+  if (h >= 19 && h < 22) return "plum";
+  return "midnight";
+}
+function stopsFor(bg) {
+  if (bg.mode === "custom") return [bg.c1, mixHex(bg.c1, bg.c2, 0.5), bg.c2];
+  if (bg.mode === "auto") return PALETTES[autoPreset()];
+  return PALETTES[bg.preset] || PALETTES.plum;
+}
+function applyTheme() {
+  const stops = stopsFor(S.bg);
+  const r = document.documentElement.style;
+  r.setProperty("--bg1", stops[0]); r.setProperty("--bg2", stops[1]); r.setProperty("--bg3", stops[2]);
+  deriveBlobs(stops).forEach((cl, i) => r.setProperty(`--blob${i + 1}`, cl));
 }
 
 function renderGreeting() {
@@ -228,20 +271,27 @@ function renderFocus() {
   const active = S.focus.date === todayKey() && S.focus.text;
   $("focusInput").hidden = !!active;
   $("focusAsk").hidden = !!active;
+  $("focusHint").hidden = !!active;
   $("focusDone").hidden = !active;
+  $("focusHelp").hidden = !active;
+  const s = $("streak");
   if (active) {
     $("focusText").textContent = S.focus.text;
     $("focusDone").classList.toggle("done", !!S.focus.done);
     $("focusCheck").textContent = S.focus.done ? "✓" : "";
+    if (S.streak.count > 0) {
+      s.hidden = false;
+      s.textContent = `🔥 ${S.streak.count}`;
+      s.title = `${T.streakBest}: ${S.streak.best || S.streak.count}`;
+    } else s.hidden = true;
+    // explain the streak rule right where it matters
+    $("focusHelp").textContent = S.focus.done
+      ? `🔥 ${S.streak.count} ${T.focusHelpDone}`
+      : T.focusHelpTodo;
   } else {
     $("focusInput").value = "";
+    s.hidden = true;
   }
-  const s = $("streak");
-  if (S.streak.count > 0) {
-    s.hidden = false;
-    s.textContent = `🔥 ${S.streak.count}`;
-    s.title = `${T.streakBest}: ${S.streak.best || S.streak.count}`;
-  } else s.hidden = true;
 }
 
 function setFocus(text) {
@@ -480,10 +530,56 @@ function renderSettings() {
   $("setName").value = S.name;
   $("setEngine").value = S.engine;
   $("setLang").value = S.lang;
-  $("setTheme").value = S.theme;
+  renderPalette();
   renderLinkEditor();
   renderToggles();
   renderStats();
+}
+
+/* ---------- background palette picker ---------- */
+function bgActive(key) {
+  if (key === "auto") return S.bg.mode === "auto";
+  if (key === "custom") return S.bg.mode === "custom";
+  return S.bg.mode === "preset" && S.bg.preset === key;
+}
+function renderPalette() {
+  const box = $("palette");
+  box.innerHTML = "";
+  const swatch = (key, stops, label) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "swatch" + (bgActive(key) ? " active" : "");
+    b.style.background = `linear-gradient(145deg, ${stops[0]}, ${stops[1]} 50%, ${stops[2]})`;
+    b.title = key;
+    if (label) { const s = document.createElement("span"); s.className = "lbl"; s.textContent = label; b.append(s); }
+    b.addEventListener("click", () => selectPalette(key));
+    box.append(b);
+  };
+  PALETTE_ORDER.forEach((k) => swatch(k, PALETTES[k]));
+  swatch("auto", PALETTES[autoPreset()], "◐");
+  swatch("custom", [S.bg.c1, mixHex(S.bg.c1, S.bg.c2, 0.5), S.bg.c2], "✎");
+  $("customRow").hidden = S.bg.mode !== "custom";
+  $("ccTop").value = S.bg.c1;
+  $("ccBot").value = S.bg.c2;
+}
+function selectPalette(key) {
+  if (key === "auto") S.bg.mode = "auto";
+  else if (key === "custom") S.bg.mode = "custom";
+  else { S.bg.mode = "preset"; S.bg.preset = key; }
+  save();
+  applyTheme();
+  renderPalette();
+}
+// live update while dragging the color pickers (don't rebuild the inputs)
+function markCustomActive() {
+  const sws = document.querySelectorAll("#palette .swatch");
+  sws.forEach((b) => b.classList.remove("active"));
+  const custom = sws[sws.length - 1];
+  if (custom) {
+    custom.classList.add("active");
+    custom.style.background =
+      `linear-gradient(145deg, ${S.bg.c1}, ${mixHex(S.bg.c1, S.bg.c2, 0.5)} 50%, ${S.bg.c2})`;
+  }
 }
 function renderStats() {
   const best = S.streak.best || 0;
@@ -620,7 +716,8 @@ function wireEvents() {
   $("setName").addEventListener("input", () => { S.name = $("setName").value; save(); renderGreeting(); });
   $("setEngine").addEventListener("change", () => { S.engine = $("setEngine").value; save(); renderSearch(); });
   $("setLang").addEventListener("change", () => { S.lang = $("setLang").value; save(); applyLang(); renderAll(); });
-  $("setTheme").addEventListener("change", () => { S.theme = $("setTheme").value; save(); applyTheme(); });
+  $("ccTop").addEventListener("input", () => { S.bg.c1 = $("ccTop").value; S.bg.mode = "custom"; save(); applyTheme(); markCustomActive(); });
+  $("ccBot").addEventListener("input", () => { S.bg.c2 = $("ccBot").value; S.bg.mode = "custom"; save(); applyTheme(); markCustomActive(); });
   $("linkAddForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const name = $("linkName").value.trim();

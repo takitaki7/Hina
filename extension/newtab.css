@@ -14,6 +14,10 @@
     inset 0 -1px 1px rgba(255,255,255,0.18),
     inset 0 0 0 1px rgba(255,255,255,0.12);
   --glass-drop: 0 16px 40px rgba(0,0,0,0.34), 0 4px 12px rgba(0,0,0,0.20);
+
+  /* background palette (overridden at runtime by JS) */
+  --bg1: #1a1140; --bg2: #4a2a7a; --bg3: #8f5bd0;
+  --blob1: #9b6cff; --blob2: #5b3a9e; --blob3: #b98cff; --blob4: #7a52c8;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -36,18 +40,9 @@ html, body {
 /* ===================== BACKGROUND STACK ===================== */
 .bg {
   position: fixed; inset: 0; z-index: -3;
-  background: linear-gradient(160deg, #10203f 0%, #1d2a52 48%, #35275e 100%);
-  transition: background 1.4s var(--ease);
+  background: linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 50%, var(--bg3) 100%);
+  transition: background 1.2s var(--ease);
 }
-/* time-of-day palettes */
-.t-dawn   { background: linear-gradient(160deg, #241b4f 0%, #7a4a72 50%, #e79a76 100%); }
-.t-day    { background: linear-gradient(160deg, #1f5fae 0%, #3f9bd8 46%, #8fd3ec 100%); }
-.t-golden { background: linear-gradient(160deg, #2e2b63 0%, #a64f66 50%, #eaa14f 100%); }
-.t-dusk   { background: linear-gradient(160deg, #121438 0%, #3a2760 52%, #6f3b6a 100%); }
-.t-night  { background: linear-gradient(160deg, #060b1e 0%, #111c3d 55%, #1f2450 100%); }
-.t-aurora { background: linear-gradient(160deg, #021018 0%, #0a3d4f 44%, #1f8a6d 100%); }
-.t-forest { background: linear-gradient(160deg, #0b1f14 0%, #1a4a33 50%, #3f8355 100%); }
-.t-mono   { background: linear-gradient(160deg, #0e0e12 0%, #212127 55%, #37373f 100%); }
 
 .blobs {
   position: fixed; inset: -12%; z-index: -2; pointer-events: none;
@@ -57,10 +52,10 @@ html, body {
   position: absolute; border-radius: 50%; opacity: 0.62;
   mix-blend-mode: screen; will-change: transform;
 }
-.b1 { width: 48vmax; height: 48vmax; left: -8%;  top: -12%; background: radial-gradient(circle, #7c5cff, transparent 62%); animation: drift1 30s ease-in-out infinite; }
-.b2 { width: 42vmax; height: 42vmax; right: -6%; top: 4%;   background: radial-gradient(circle, #ff5c9d, transparent 62%); animation: drift2 34s ease-in-out infinite; }
-.b3 { width: 46vmax; height: 46vmax; left: 18%;  bottom: -18%; background: radial-gradient(circle, #21d4c9, transparent 62%); animation: drift3 38s ease-in-out infinite; }
-.b4 { width: 34vmax; height: 34vmax; right: 12%; bottom: -10%; background: radial-gradient(circle, #ffb454, transparent 62%); animation: drift1 42s ease-in-out infinite reverse; }
+.b1 { width: 48vmax; height: 48vmax; left: -8%;  top: -12%; background: radial-gradient(circle, var(--blob1), transparent 62%); animation: drift1 30s ease-in-out infinite; }
+.b2 { width: 42vmax; height: 42vmax; right: -6%; top: 4%;   background: radial-gradient(circle, var(--blob2), transparent 62%); animation: drift2 34s ease-in-out infinite; }
+.b3 { width: 46vmax; height: 46vmax; left: 18%;  bottom: -18%; background: radial-gradient(circle, var(--blob3), transparent 62%); animation: drift3 38s ease-in-out infinite; }
+.b4 { width: 34vmax; height: 34vmax; right: 12%; bottom: -10%; background: radial-gradient(circle, var(--blob4), transparent 62%); animation: drift1 42s ease-in-out infinite reverse; }
 
 @keyframes drift1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(6vmax,4vmax) scale(1.12); } }
 @keyframes drift2 { 0%,100% { transform: translate(0,0) scale(1.05); } 50% { transform: translate(-5vmax,5vmax) scale(0.94); } }
@@ -159,6 +154,8 @@ html, body {
 }
 .focus-input:focus { border-color: rgba(255,255,255,0.6); }
 .focus-input::placeholder { color: var(--fg-faint); }
+.focus-hint { font-size: 12.5px; color: var(--fg-faint); margin-top: 9px; letter-spacing: 0.02em; }
+.focus-help { font-size: 12.5px; color: var(--fg-faint); margin-top: 10px; letter-spacing: 0.01em; }
 .focus-done { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
 .focus-check {
   width: 26px; height: 26px; border-radius: 50%; border: 1.6px solid rgba(255,255,255,0.5);
@@ -173,10 +170,10 @@ html, body {
 .focus-text { font-size: 23px; font-weight: 300; }
 .focus-done.done .focus-text { opacity: 0.66; }
 .streak {
-  font-size: 13px; font-weight: 600; padding: 5px 12px; letter-spacing: 0.01em;
-  border-radius: 999px; color: #ffd9a8;
+  font-size: 13px; font-weight: 600; padding: 5px 13px; letter-spacing: 0.01em;
+  border-radius: 999px; color: #ffe0b0; white-space: nowrap;
+  background: rgba(255, 176, 92, 0.16); border: 1px solid rgba(255, 200, 140, 0.30);
 }
-.streak::after, .streak::before { border-radius: 999px; }
 .link-btn { background: none; border: none; color: var(--fg-faint); cursor: pointer; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
 .link-btn:hover { color: var(--fg); }
 
@@ -316,6 +313,28 @@ html, body {
 .toggle input { width: 42px; height: 24px; accent-color: #fff; }
 .settings-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.14); }
 .brand { font-size: 12px; color: var(--fg-faint); }
+
+/* background palette picker */
+.palette { display: grid; grid-template-columns: repeat(6, 1fr); gap: 9px; }
+.swatch {
+  position: relative; aspect-ratio: 1; border-radius: 12px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.16); padding: 0; overflow: hidden;
+  transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+.swatch:hover { transform: translateY(-2px); }
+.swatch.active { box-shadow: 0 0 0 2px #fff, 0 4px 12px rgba(0,0,0,0.35); border-color: transparent; }
+.swatch .lbl {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 15px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.custom-row { display: flex; gap: 12px; margin-top: 10px; }
+.cc { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--fg-dim); }
+.cc input[type="color"] {
+  width: 46px; height: 30px; padding: 0; border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 9px; background: transparent; cursor: pointer;
+}
+.cc input[type="color"]::-webkit-color-swatch-wrapper { padding: 3px; }
+.cc input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
 
 /* ===================== ONBOARDING ===================== */
 .onboard {

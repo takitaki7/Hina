@@ -59,12 +59,14 @@
       <div class="focus" id="focusWrap">
         <div class="focus-ask" id="focusAsk"></div>
         <input class="focus-input" id="focusInput" type="text" autocomplete="off" spellcheck="false" />
+        <div class="focus-hint" id="focusHint"></div>
         <div class="focus-done" id="focusDone" hidden>
           <button class="focus-check" id="focusCheck" aria-label="Complete focus"></button>
           <span class="focus-text" id="focusText"></span>
-          <span class="streak glass" id="streak" hidden></span>
+          <span class="streak" id="streak" hidden></span>
           <button class="link-btn" id="focusClear"></button>
         </div>
+        <div class="focus-help" id="focusHelp" hidden></div>
       </div>
     </section>
 
@@ -179,16 +181,14 @@
       </select>
     </label>
 
-    <label class="field">
+    <div class="field">
       <span id="setThemeLabel"></span>
-      <select id="setTheme">
-        <option value="time">Time of day</option>
-        <option value="aurora">Aurora</option>
-        <option value="dusk">Dusk</option>
-        <option value="forest">Forest</option>
-        <option value="mono">Mono</option>
-      </select>
-    </label>
+      <div class="palette" id="palette"></div>
+      <div class="custom-row" id="customRow" hidden>
+        <label class="cc"><span id="ccTopLabel"></span><input type="color" id="ccTop" /></label>
+        <label class="cc"><span id="ccBotLabel"></span><input type="color" id="ccBot" /></label>
+      </div>
+    </div>
 
     <div class="field">
       <span id="setLinksLabel"></span>
