@@ -28,9 +28,11 @@ const DEFAULTS = {
     { name: "Maps", url: "https://maps.google.com" },
   ],
   focus: { date: "", text: "", done: false },
-  streak: { count: 0, last: "" }, // consecutive days a focus was completed
+  streak: { count: 0, last: "", best: 0 }, // consecutive days a focus was completed
+  stats: { completed: 0 },                 // lifetime focuses completed
   todos: [],
-  toggles: { quote: true, dial: true },
+  notes: "",
+  toggles: { quote: true, dial: true, clock24: true, seconds: false, chime: true },
   firstRunDone: false,
 };
 
@@ -137,6 +139,7 @@ function renderStaticText() {
   $("pomoTitle").textContent = T.pomoTitle;
   $("pomoReset").textContent = T.pomoReset;
   $("pomoLabel").textContent = T.pomoLabel;
+  $("notesTitle").textContent = T.notesTitle;
   $("setTitle").textContent = T.setTitle;
   $("setNameLabel").textContent = T.setName;
   $("setName").placeholder = T.setNamePlaceholder;
@@ -158,22 +161,34 @@ function renderStaticText() {
 }
 
 /* ---------- clock + theme ---------- */
-function startClock() {
+let clockTimer = null;
+let clockAlign = null;
+function scheduleClock() {
+  clearInterval(clockTimer);
+  clearTimeout(clockAlign);
   renderClock();
-  const now = new Date();
-  const ms = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
-  setTimeout(() => {
-    renderClock();
-    renderGreeting();
-    renderFocus();
-    setInterval(() => { renderClock(); renderGreeting(); renderFocus(); }, 60000);
-  }, ms);
+  if (S.toggles.seconds) {
+    clockTimer = setInterval(() => { renderClock(); renderGreeting(); renderFocus(); }, 1000);
+  } else {
+    const now = new Date();
+    const ms = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+    clockAlign = setTimeout(() => {
+      renderClock(); renderGreeting(); renderFocus();
+      clockTimer = setInterval(() => { renderClock(); renderGreeting(); renderFocus(); }, 60000);
+    }, ms);
+  }
 }
+function startClock() { scheduleClock(); }
 
 function renderClock() {
   const now = new Date();
-  $("clock").textContent =
-    `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  let h = now.getHours();
+  if (!S.toggles.clock24) { h = h % 12 || 12; }
+  const hh = S.toggles.clock24 ? String(h).padStart(2, "0") : String(h);
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  let t = `${hh}:${mm}`;
+  if (S.toggles.seconds) t += `:${String(now.getSeconds()).padStart(2, "0")}`;
+  $("clock").textContent = t;
   $("date").textContent = now.toLocaleDateString(activeLangCode(), T.dateFmt);
   applyTheme();
 }
@@ -222,8 +237,11 @@ function renderFocus() {
     $("focusInput").value = "";
   }
   const s = $("streak");
-  if (S.streak.count > 0) { s.hidden = false; s.textContent = `🔥 ${S.streak.count}`; }
-  else s.hidden = true;
+  if (S.streak.count > 0) {
+    s.hidden = false;
+    s.textContent = `🔥 ${S.streak.count}`;
+    s.title = `${T.streakBest}: ${S.streak.best || S.streak.count}`;
+  } else s.hidden = true;
 }
 
 function setFocus(text) {
@@ -235,10 +253,14 @@ function setFocus(text) {
 function completeFocus() {
   const nowDone = !S.focus.done;
   S.focus.done = nowDone;
-  if (nowDone && S.streak.last !== todayKey()) {
-    // advance the streak at most once per day
-    S.streak.count = S.streak.last === dayKey(-1) ? S.streak.count + 1 : 1;
-    S.streak.last = todayKey();
+  if (nowDone) {
+    S.stats.completed = (S.stats.completed || 0) + 1;
+    if (S.streak.last !== todayKey()) {
+      // advance the streak at most once per day
+      S.streak.count = S.streak.last === dayKey(-1) ? S.streak.count + 1 : 1;
+      S.streak.last = todayKey();
+    }
+    S.streak.best = Math.max(S.streak.best || 0, S.streak.count);
   }
   save();
   renderFocus();
@@ -334,42 +356,123 @@ function renderTodoList() {
   });
 }
 
-/* ---------- pomodoro ---------- */
+/* ---------- pomodoro (auto-cycling focus / break) ---------- */
 const RING_CIRC = 2 * Math.PI * 52; // r=52 in the SVG
-const pomo = { min: 25, remaining: 25 * 60, running: false, timer: null };
+const pomo = {
+  focusMin: 25, breakMin: 5, longBreakMin: 15,
+  phase: "focus", sessions: 0,
+  total: 25 * 60, remaining: 25 * 60,
+  running: false, timer: null,
+};
 
+function phaseMinutes() {
+  if (pomo.phase === "break") return pomo.sessions % 4 === 0 ? pomo.longBreakMin : pomo.breakMin;
+  return pomo.focusMin;
+}
 function renderPomo() {
   const m = Math.floor(pomo.remaining / 60);
   const s = pomo.remaining % 60;
   $("pomoTime").textContent = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   $("pomoStart").textContent = pomo.running ? T.pomoPause : T.pomoStart;
-  const frac = pomo.remaining / (pomo.min * 60);
+  $("pomoPhase").textContent = pomo.phase === "break" ? T.pomoBreak : T.pomoFocus;
+  const frac = pomo.total ? pomo.remaining / pomo.total : 0;
   $("ringFill").style.strokeDashoffset = String(RING_CIRC * (1 - frac));
+  $("pomoMute").textContent = S.toggles.chime ? "🔔" : "🔕";
+  renderPomoDots();
+}
+function renderPomoDots() {
+  const box = $("pomoDots");
+  box.innerHTML = "";
+  const filled = pomo.sessions % 4; // completed focus blocks in the current cycle
+  for (let i = 0; i < 4; i++) {
+    const d = document.createElement("span");
+    d.className = "dot" + (i < filled ? " on" : "");
+    box.append(d);
+  }
 }
 function pomoTick() {
-  if (pomo.remaining <= 0) {
-    pomoStop();
-    $("pomoTime").textContent = T.pomoDone;
-    flashTitle(T.pomoDone);
-    return;
-  }
+  if (pomo.remaining <= 0) { pomoAdvance(); return; }
   pomo.remaining--;
   renderPomo();
 }
+function pomoAdvance() {
+  chime();
+  if (pomo.phase === "focus") {
+    pomo.sessions++;
+    pomo.phase = "break";
+    flashTitle(T.pomoDone);
+  } else {
+    pomo.phase = "focus";
+  }
+  pomo.total = phaseMinutes() * 60;
+  pomo.remaining = pomo.total;
+  renderPomo(); // the running interval keeps the next phase going automatically
+}
 function pomoToggle() {
   if (pomo.running) { pomoStop(); return; }
+  ensureAudio(); // unlock audio inside this user gesture so the chime can play later
   pomo.running = true;
   pomo.timer = setInterval(pomoTick, 1000);
   renderPomo();
 }
-function pomoStop() { pomo.running = false; clearInterval(pomo.timer); renderPomo(); }
-function pomoReset() { pomoStop(); pomo.remaining = pomo.min * 60; renderPomo(); }
+function ensureAudio() {
+  if (!S.toggles.chime) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+  } catch { /* no audio */ }
+}
+function pomoStop() { pomo.running = false; clearInterval(pomo.timer); pomo.timer = null; renderPomo(); }
+function pomoReset() {
+  pomoStop();
+  pomo.phase = "focus"; pomo.sessions = 0;
+  pomo.total = phaseMinutes() * 60; pomo.remaining = pomo.total;
+  renderPomo();
+}
+
+/* gentle two-note chime via WebAudio — no asset, no network */
+let audioCtx = null;
+function chime() {
+  if (!S.toggles.chime) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = audioCtx;
+    const t0 = ctx.currentTime;
+    [880, 1318.5].forEach((f, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.value = f;
+      o.connect(g); g.connect(ctx.destination);
+      const t = t0 + i * 0.18;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.16, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      o.start(t); o.stop(t + 0.55);
+    });
+  } catch { /* audio unavailable — silent */ }
+}
 
 let titleTimer = null;
 function flashTitle(msg) {
   document.title = "🔔 " + msg;
   clearTimeout(titleTimer);
   titleTimer = setTimeout(() => (document.title = "Hina"), 6000);
+}
+
+/* ---------- notes ---------- */
+let notesTimer = null;
+function renderNotes() {
+  $("notesArea").value = S.notes || "";
+  $("notesArea").placeholder = T.notesPlaceholder;
+  $("notesSaved").textContent = "";
+}
+function saveNotes() {
+  S.notes = $("notesArea").value;
+  save();
+  $("notesSaved").textContent = T.notesSaved;
+  clearTimeout(notesTimer);
+  notesTimer = setTimeout(() => ($("notesSaved").textContent = ""), 1500);
 }
 
 /* ---------- settings ---------- */
@@ -380,6 +483,14 @@ function renderSettings() {
   $("setTheme").value = S.theme;
   renderLinkEditor();
   renderToggles();
+  renderStats();
+}
+function renderStats() {
+  const best = S.streak.best || 0;
+  const done = S.stats.completed || 0;
+  $("setStats").textContent = done > 0 || best > 0
+    ? `🔥 ${T.streakBest}: ${best}  ·  ✓ ${done} ${T.statsDone}`
+    : "";
 }
 function renderLinkEditor() {
   const box = $("linkEditor");
@@ -403,6 +514,9 @@ function renderLinkEditor() {
 const TOGGLE_KEYS = [
   { key: "dial", label: () => T.setLinks },
   { key: "quote", label: () => T.tg_quote },
+  { key: "clock24", label: () => T.tg_clock24 },
+  { key: "seconds", label: () => T.tg_seconds },
+  { key: "chime", label: () => T.tg_chime },
 ];
 function renderToggles() {
   const box = $("toggles");
@@ -415,7 +529,14 @@ function renderToggles() {
     const input = document.createElement("input");
     input.type = "checkbox";
     input.checked = !!S.toggles[key];
-    input.onchange = () => { S.toggles[key] = input.checked; save(); renderDial(); renderQuote(); };
+    input.onchange = () => {
+      S.toggles[key] = input.checked;
+      save();
+      renderDial();
+      renderQuote();
+      if (key === "seconds") scheduleClock();
+      else renderClock();
+    };
     row.append(span, input);
     box.append(row);
   });
@@ -428,7 +549,7 @@ function openPanel(id) {
   $("scrim").hidden = false;
 }
 function closePanels() {
-  ["todoPanel", "pomoPanel", "settingsPanel"].forEach((id) => ($(id).hidden = true));
+  ["todoPanel", "pomoPanel", "settingsPanel", "notesPanel"].forEach((id) => ($(id).hidden = true));
   $("scrim").hidden = true;
 }
 
@@ -480,14 +601,19 @@ function wireEvents() {
   $("pomoBtn").addEventListener("click", () => { renderPomo(); openPanel("pomoPanel"); });
   $("pomoStart").addEventListener("click", pomoToggle);
   $("pomoReset").addEventListener("click", pomoReset);
+  $("pomoMute").addEventListener("click", () => { S.toggles.chime = !S.toggles.chime; save(); renderPomo(); });
   document.querySelectorAll("#pomoPanel .mode").forEach((btn) => {
     btn.addEventListener("click", () => {
       document.querySelectorAll("#pomoPanel .mode").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-      pomo.min = Number(btn.dataset.min);
+      pomo.focusMin = Number(btn.dataset.min);
       pomoReset();
     });
   });
+
+  // notes (auto-saved)
+  $("notesBtn").addEventListener("click", () => { renderNotes(); openPanel("notesPanel"); setTimeout(() => $("notesArea").focus(), 60); });
+  $("notesArea").addEventListener("input", saveNotes);
 
   // settings
   $("openSettings").addEventListener("click", () => { renderSettings(); openPanel("settingsPanel"); });

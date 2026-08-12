@@ -76,16 +76,19 @@ acquisition.
 
 ## Features
 
-- **Liquid‑Glass UI** — translucent refractive panels, specular edges, an
-  animated mesh‑gradient backdrop, and a light‑catching sheen on hover
-- **Clock & date** with a gradient that shifts through dawn → day → golden hour → dusk → night
+- **Liquid‑Glass UI** — translucent refractive panels with a real
+  displacement‑lens backdrop, specular edges, a **cursor‑tracked highlight**
+  that follows your pointer, an animated mesh‑gradient backdrop and film grain
+- **Simple “H” glass logo** — a frosted glass mark used across the icon set
+- **Clock & date** with a gradient that shifts through dawn → day → golden hour → dusk → night, **12/24‑hour** and optional **seconds**
 - **Today's one focus** — a single intention that resets each day, with a
-  **completion streak (🔥)** that rewards coming back
+  **completion streak (🔥)**, best‑streak record and lifetime‑completed stats
 - **Warm onboarding** — a one‑time welcome that personalizes the greeting
 - **Quick search** — Google / Bing / DuckDuckGo / Ecosia / Brave, URL‑aware
 - **Speed dial** — your favorite links as glossy tiles (fully editable)
-- **To‑do list** — lightweight, local, always a click away
-- **Pomodoro timer** — 25 / 5 / 15‑minute sessions with a glass progress ring
+- **To‑do list** and **Quick Notes** — lightweight, local, auto‑saved
+- **Pomodoro** — auto‑cycling focus / break with session dots, a glass progress
+  ring and a gentle WebAudio chime (mutable)
 - **Daily quote** — a gentle nudge, bundled offline
 - **Themes** — follow the time of day, or pick Aurora / Dusk / Forest / Mono
 - **English‑first**, with 日本語 and Español built in (switchable any time)
