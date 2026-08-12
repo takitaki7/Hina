@@ -136,6 +136,7 @@ function renderStaticText() {
   $("pomoReset").textContent = T.pomoReset;
   $("pomoLabel").textContent = T.pomoLabel;
   $("notesTitle").textContent = T.notesTitle;
+  $("notesLabel").textContent = T.notesTitle;
   $("setTitle").textContent = T.setTitle;
   $("setNameLabel").textContent = T.setName;
   $("setName").placeholder = T.setNamePlaceholder;
@@ -296,19 +297,17 @@ function isUrl(s) {
 
 /* ---------- speed dial ---------- */
 const TILE_COLORS = [
-  "linear-gradient(135deg,#6366f1,#8b5cf6)",
-  "linear-gradient(135deg,#0ea5e9,#22d3ee)",
-  "linear-gradient(135deg,#10b981,#34d399)",
-  "linear-gradient(135deg,#f59e0b,#fbbf24)",
-  "linear-gradient(135deg,#ef4444,#fb7185)",
-  "linear-gradient(135deg,#ec4899,#f472b6)",
-  "linear-gradient(135deg,#8b5cf6,#c084fc)",
-  "linear-gradient(135deg,#14b8a6,#2dd4bf)",
+  ["#6366f1", "#8b5cf6"], ["#0ea5e9", "#22d3ee"], ["#10b981", "#34d399"],
+  ["#f59e0b", "#fbbf24"], ["#ef4444", "#fb7185"], ["#ec4899", "#f472b6"],
+  ["#8b5cf6", "#c084fc"], ["#14b8a6", "#2dd4bf"],
 ];
-function colorFor(str) {
+function rgbaStr(hex, a) { const [r, g, b] = hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; }
+// translucent tint so the frosted glass blur shows through (liquid-glass tiles)
+function tintFor(str) {
   let h = 0;
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
-  return TILE_COLORS[h % TILE_COLORS.length];
+  const [a, b] = TILE_COLORS[h % TILE_COLORS.length];
+  return `linear-gradient(135deg, ${rgbaStr(a, 0.74)}, ${rgbaStr(b, 0.74)})`;
 }
 
 function renderDial() {
@@ -321,7 +320,7 @@ function renderDial() {
     a.href = normalizeUrl(l.url);
     const tile = document.createElement("div");
     tile.className = "tile";
-    tile.style.background = colorFor(l.name || l.url);
+    tile.style.setProperty("--tint", tintFor(l.name || l.url));
     tile.textContent = (l.name || l.url).trim().charAt(0).toUpperCase();
     const span = document.createElement("span");
     span.textContent = l.name || hostOf(l.url);
@@ -362,6 +361,9 @@ function renderTodoList() {
 
 /* ---------- pomodoro (auto-cycling focus / break) ---------- */
 const RING_CIRC = 2 * Math.PI * 52; // r=52 in the SVG
+const SVG_ATTR = 'viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"';
+const SOUND_ON = `<svg ${SVG_ATTR}><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg>`;
+const SOUND_OFF = `<svg ${SVG_ATTR}><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M22 9l-6 6"/><path d="M16 9l6 6"/></svg>`;
 const pomo = {
   focusMin: 25, breakMin: 5, longBreakMin: 15,
   phase: "focus", sessions: 0,
@@ -380,7 +382,8 @@ function renderPomo() {
   $("pomoPhase").textContent = pomo.phase === "break" ? T.pomoBreak : T.pomoFocus;
   const frac = pomo.total ? pomo.remaining / pomo.total : 0;
   $("ringFill").style.strokeDashoffset = String(RING_CIRC * (1 - frac));
-  $("pomoMute").textContent = S.toggles.chime ? "🔔" : "🔕";
+  $("pomoMute").innerHTML = S.toggles.chime ? SOUND_ON : SOUND_OFF;
+  $("pomoMute").title = S.toggles.chime ? T.pomoSoundOn : T.pomoSoundOff;
   renderPomoDots();
   // surface the live countdown on the main page (bottom-right pill)
   const pill = $("pomoBtn");
