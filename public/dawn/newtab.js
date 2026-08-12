@@ -30,8 +30,7 @@ const DEFAULTS = {
   focusText: "",                            // an intention you can edit anytime
   todos: [],
   notes: "",
-  weather: { on: false, city: "", unit: "c", place: null, data: null, ts: 0 },
-  toggles: { quote: true, dial: true, clock24: true, seconds: false, chime: true },
+  toggles: { dial: true, clock24: true, seconds: false, chime: true },
   firstRunDone: false,
 };
 
@@ -77,7 +76,6 @@ function save() { store.set(S); }
   startClock();
   wireEvents();
   wireGlass();
-  refreshWeather();
   maybeOnboard();
 })();
 
@@ -125,9 +123,7 @@ function renderAll() {
   renderFocus();
   renderSearch();
   renderDial();
-  renderQuote();
   renderTodoCount();
-  renderWeather();
 }
 
 function renderStaticText() {
@@ -148,8 +144,6 @@ function renderStaticText() {
   $("setThemeLabel").textContent = T.setTheme;
   $("ccTopLabel").textContent = T.ccTop;
   $("ccBotLabel").textContent = T.ccBot;
-  $("setWeatherLabel").textContent = T.setWeather;
-  $("weatherCity").placeholder = T.weatherCity;
   $("setLinksLabel").textContent = T.setLinks;
   $("privacyNote").textContent = T.privacy;
   $("obTitle").textContent = T.ob_title;
@@ -338,16 +332,6 @@ function renderDial() {
 function normalizeUrl(u) { return /^https?:\/\//i.test(u) ? u : "https://" + u; }
 function hostOf(u) { try { return new URL(normalizeUrl(u)).hostname.replace(/^www\./, ""); } catch { return u; } }
 
-/* ---------- quote ---------- */
-function renderQuote() {
-  const q = $("quote");
-  q.hidden = !S.toggles.quote;
-  if (!S.toggles.quote) return;
-  const list = QUOTES[activeLangCode()] || QUOTES.en;
-  const seed = Number(todayKey().replace(/-/g, ""));
-  q.textContent = list[seed % list.length];
-}
-
 /* ---------- todo ---------- */
 function renderTodoCount() {
   const open = S.todos.filter((t) => !t.done).length;
@@ -390,15 +374,23 @@ function phaseMinutes() {
   return pomo.focusMin;
 }
 function renderPomo() {
-  const m = Math.floor(pomo.remaining / 60);
-  const s = pomo.remaining % 60;
-  $("pomoTime").textContent = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  const mmss = `${String(Math.floor(pomo.remaining / 60)).padStart(2, "0")}:${String(pomo.remaining % 60).padStart(2, "0")}`;
+  $("pomoTime").textContent = mmss;
   $("pomoStart").textContent = pomo.running ? T.pomoPause : T.pomoStart;
   $("pomoPhase").textContent = pomo.phase === "break" ? T.pomoBreak : T.pomoFocus;
   const frac = pomo.total ? pomo.remaining / pomo.total : 0;
   $("ringFill").style.strokeDashoffset = String(RING_CIRC * (1 - frac));
   $("pomoMute").textContent = S.toggles.chime ? "🔔" : "🔕";
   renderPomoDots();
+  // surface the live countdown on the main page (bottom-right pill)
+  const pill = $("pomoBtn");
+  if (pomo.running) {
+    $("pomoLabel").textContent = mmss;
+    pill.classList.add("running");
+  } else {
+    $("pomoLabel").textContent = T.pomoLabel;
+    pill.classList.remove("running");
+  }
 }
 function renderPomoDots() {
   const box = $("pomoDots");
@@ -501,7 +493,6 @@ function renderSettings() {
   $("setEngine").value = S.engine;
   $("setLang").value = S.lang;
   renderPalette();
-  renderWeatherSettings();
   renderLinkEditor();
   renderToggles();
 }
@@ -551,75 +542,6 @@ function markCustomActive() {
       `linear-gradient(145deg, ${S.bg.c1}, ${mixHex(S.bg.c1, S.bg.c2, 0.5)} 50%, ${S.bg.c2})`;
   }
 }
-function renderWeatherSettings() {
-  $("setWeather").checked = !!S.weather.on;
-  $("weatherCity").value = S.weather.city || "";
-  $("weatherCfg").hidden = !S.weather.on;
-  document.querySelectorAll("#weatherCfg .unit-btn").forEach((b) =>
-    b.classList.toggle("active", b.dataset.unit === S.weather.unit));
-  $("weatherStatus").textContent = S.weather.place ? S.weather.place.name : "";
-}
-
-/* ---------- weather (opt-in · Open-Meteo · no key, only when enabled) ---------- */
-const WCODE = {
-  0: ["☀️", "Clear"], 1: ["🌤️", "Mainly clear"], 2: ["⛅", "Partly cloudy"], 3: ["☁️", "Overcast"],
-  45: ["🌫️", "Fog"], 48: ["🌫️", "Rime fog"],
-  51: ["🌦️", "Light drizzle"], 53: ["🌦️", "Drizzle"], 55: ["🌦️", "Dense drizzle"],
-  61: ["🌧️", "Light rain"], 63: ["🌧️", "Rain"], 65: ["🌧️", "Heavy rain"],
-  66: ["🌧️", "Freezing rain"], 67: ["🌧️", "Freezing rain"],
-  71: ["🌨️", "Light snow"], 73: ["🌨️", "Snow"], 75: ["❄️", "Heavy snow"], 77: ["❄️", "Snow grains"],
-  80: ["🌦️", "Showers"], 81: ["🌦️", "Showers"], 82: ["⛈️", "Violent showers"],
-  85: ["🌨️", "Snow showers"], 86: ["🌨️", "Snow showers"],
-  95: ["⛈️", "Thunderstorm"], 96: ["⛈️", "Thunderstorm"], 99: ["⛈️", "Thunderstorm"],
-};
-function wInfo(code) { return WCODE[code] || ["🌡️", ""]; }
-function renderWeather() {
-  const chip = $("weatherChip");
-  if (!S.weather.on || !S.weather.data) { chip.hidden = true; return; }
-  const [emoji, label] = wInfo(S.weather.data.code);
-  chip.hidden = false;
-  chip.innerHTML = `<span class="w-emoji">${emoji}</span><span class="w-temp">${Math.round(S.weather.data.temp)}°</span>`;
-  chip.title = (S.weather.place ? S.weather.place.name + " · " : "") + label;
-}
-async function geocodeCity(city) {
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`;
-  const j = await (await fetch(url)).json();
-  if (!j.results || !j.results.length) throw new Error("not found");
-  const g = j.results[0];
-  return { name: [g.name, g.country_code].filter(Boolean).join(", "), lat: g.latitude, lon: g.longitude };
-}
-async function fetchWeather() {
-  const p = S.weather.place;
-  if (!p) return;
-  const unit = S.weather.unit === "f" ? "fahrenheit" : "celsius";
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,weather_code&temperature_unit=${unit}`;
-  const c = (await (await fetch(url)).json()).current;
-  S.weather.data = { temp: c.temperature_2m, code: c.weather_code };
-  S.weather.ts = Date.now();
-  save();
-  renderWeather();
-}
-async function refreshWeather() {
-  if (!S.weather.on || !S.weather.place) return;
-  const fresh = Date.now() - (S.weather.ts || 0) < 30 * 60 * 1000;
-  if (S.weather.data && fresh) { renderWeather(); return; }
-  try { await fetchWeather(); } catch { renderWeather(); }
-}
-async function applyWeatherCity(city) {
-  city = city.trim();
-  S.weather.city = city;
-  if (!city) { S.weather.place = null; S.weather.data = null; save(); renderWeather(); $("weatherStatus").textContent = ""; return; }
-  $("weatherStatus").textContent = T.weatherLoading;
-  try {
-    S.weather.place = await geocodeCity(city);
-    save();
-    $("weatherStatus").textContent = S.weather.place.name;
-    await fetchWeather();
-  } catch {
-    S.weather.place = null; S.weather.data = null; save(); renderWeather();
-    $("weatherStatus").textContent = T.weatherNotFound;
-  }
-}
 function renderLinkEditor() {
   const box = $("linkEditor");
   box.innerHTML = "";
@@ -641,7 +563,6 @@ function renderLinkEditor() {
 }
 const TOGGLE_KEYS = [
   { key: "dial", label: () => T.setLinks },
-  { key: "quote", label: () => T.tg_quote },
   { key: "clock24", label: () => T.tg_clock24 },
   { key: "seconds", label: () => T.tg_seconds },
   { key: "chime", label: () => T.tg_chime },
@@ -661,7 +582,6 @@ function renderToggles() {
       S.toggles[key] = input.checked;
       save();
       renderDial();
-      renderQuote();
       if (key === "seconds") scheduleClock();
       else renderClock();
     };
@@ -751,22 +671,6 @@ function wireEvents() {
   $("ccTop").addEventListener("input", () => { S.bg.c1 = $("ccTop").value; S.bg.mode = "custom"; save(); applyTheme(); markCustomActive(); });
   $("ccBot").addEventListener("input", () => { S.bg.c2 = $("ccBot").value; S.bg.mode = "custom"; save(); applyTheme(); markCustomActive(); });
 
-  // weather (opt-in)
-  $("setWeather").addEventListener("change", () => {
-    S.weather.on = $("setWeather").checked;
-    save();
-    $("weatherCfg").hidden = !S.weather.on;
-    if (S.weather.on) {
-      if (S.weather.place) refreshWeather();
-      else if (S.weather.city) applyWeatherCity(S.weather.city);
-    }
-    renderWeather();
-  });
-  $("weatherCity").addEventListener("change", () => applyWeatherCity($("weatherCity").value));
-  $("weatherCity").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); applyWeatherCity($("weatherCity").value); } });
-  document.querySelectorAll("#weatherCfg .unit-btn").forEach((b) =>
-    b.addEventListener("click", () => { S.weather.unit = b.dataset.unit; save(); renderWeatherSettings(); fetchWeather().catch(() => {}); }));
-  $("weatherChip").addEventListener("click", () => { renderSettings(); openPanel("settingsPanel"); });
   $("linkAddForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const name = $("linkName").value.trim();

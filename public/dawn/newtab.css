@@ -175,26 +175,6 @@ html, body {
 .topbar { display: flex; align-items: center; justify-content: space-between; }
 .date { font-size: 15px; letter-spacing: -0.005em; color: var(--fg-dim); font-weight: 500; }
 
-/* weather chip */
-.weather {
-  display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; cursor: pointer;
-  border: none; color: var(--fg); font-size: 14px; font-weight: 500;
-}
-.weather .w-emoji { font-size: 15px; line-height: 1; }
-.weather .w-temp { font-variant-numeric: tabular-nums; }
-.weather-cfg { display: flex; flex-direction: column; gap: 9px; margin-top: 6px; }
-.weather-cfg > input {
-  background: var(--field); border: 1px solid var(--line); border-radius: 12px;
-  padding: 10px 13px; color: var(--fg); font-size: 14px; outline: none; transition: border-color 0.2s var(--ease);
-}
-.weather-cfg > input:focus { border-color: var(--accent); }
-.unit-row { display: flex; gap: 6px; }
-.unit-btn {
-  padding: 6px 15px; border-radius: 999px; border: 1px solid var(--line); background: transparent;
-  color: var(--fg-dim); cursor: pointer; font-size: 13px; transition: all 0.15s var(--ease);
-}
-.unit-btn.active { background: var(--chip); color: var(--fg); }
-.weather-status { font-size: 12px; color: var(--fg-faint); min-height: 14px; }
 
 .icon-btn {
   display: grid; place-items: center; width: 40px; height: 40px;
@@ -209,12 +189,12 @@ html, body {
 
 /* liquid-glass clock — translucent gradient numerals with depth */
 .clock {
-  font-size: clamp(70px, 13vw, 150px); font-weight: 300; letter-spacing: -0.03em; line-height: 1;
+  font-size: clamp(48px, 8vw, 96px); font-weight: 300; letter-spacing: -0.03em; line-height: 1;
   font-variant-numeric: tabular-nums; position: relative;
   background: var(--clock-fill);
   -webkit-background-clip: text; background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 1px 0 var(--clock-hi)) drop-shadow(0 10px 26px var(--clock-shadow2));
+  filter: drop-shadow(0 1px 0 var(--clock-hi)) drop-shadow(0 8px 20px var(--clock-shadow2));
 }
 .greeting {
   font-size: clamp(19px, 2.3vw, 26px); font-weight: 400; letter-spacing: -0.015em;
@@ -284,10 +264,8 @@ html, body {
   transition: color 0.2s var(--ease), transform 0.2s var(--ease);
 }
 .pill:hover { color: var(--fg); transform: translateY(-1px); }
-.quote {
-  flex: 1; text-align: center; font-size: 14px; font-weight: 300; color: var(--fg-dim); font-style: italic;
-  padding: 0 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 640px; margin: 0 auto;
-}
+.pill.running { color: var(--accent); font-weight: 600; }
+.pill.running #pomoLabel { font-variant-numeric: tabular-nums; }
 
 /* ===================== PANELS ===================== */
 .scrim {
