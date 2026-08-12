@@ -1,24 +1,24 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-const title = "Dawn — a calm new tab";
+const title = "Hina — a calm new tab";
 const description =
   "A calm, private new tab with a Liquid Glass design: clock, daily focus with streaks, to-dos, a Pomodoro timer, quick links and search. 100% on-device.";
 
 export const metadata: Metadata = {
   title,
   description,
-  applicationName: "Dawn",
+  applicationName: "Hina",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Dawn",
+    title: "Hina",
   },
   openGraph: {
     title,
     description,
-    siteName: "Dawn",
+    siteName: "Hina",
     type: "website",
     locale: "en_US",
   },

@@ -1,7 +1,7 @@
 "use strict";
 
 /* ------------------------------------------------------------------ *
- * Dawn — a calm new tab (Liquid Glass edition).
+ * Hina — a calm new tab (Liquid Glass edition).
  * Everything runs on-device. No backend, no network, no accounts.
  * State lives in chrome.storage.local (falls back to localStorage
  * so the page also works when opened directly as a web demo).
@@ -74,8 +74,26 @@ function save() { store.set(S); }
   renderAll();
   startClock();
   wireEvents();
+  wireGlass();
   maybeOnboard();
 })();
+
+/* ---------- liquid-glass cursor light ---------- */
+function wireGlass() {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) return;
+  document.querySelectorAll(".glass").forEach((el) => {
+    el.addEventListener("pointermove", (e) => {
+      const r = el.getBoundingClientRect();
+      el.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`);
+      el.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`);
+    });
+    el.addEventListener("pointerleave", () => {
+      el.style.setProperty("--mx", "50%");
+      el.style.setProperty("--my", "0%");
+    });
+  });
+}
 
 function deepMerge(base, over) {
   for (const k in over) {
@@ -351,7 +369,7 @@ let titleTimer = null;
 function flashTitle(msg) {
   document.title = "🔔 " + msg;
   clearTimeout(titleTimer);
-  titleTimer = setTimeout(() => (document.title = "Dawn"), 6000);
+  titleTimer = setTimeout(() => (document.title = "Hina"), 6000);
 }
 
 /* ---------- settings ---------- */

@@ -1,4 +1,4 @@
-// Copies the static Dawn extension files into public/dawn so Vercel serves a
+// Copies the static Hina extension files into public/dawn so Vercel serves a
 // live web demo at /dawn. The extension/ folder is the single source of truth;
 // this script keeps public/dawn in sync. It runs before `next build` (see
 // vercel.json) and can be run manually via `npm run sync:demo`.

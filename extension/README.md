@@ -1,14 +1,14 @@
-# Dawn — a calm new tab 🌅
+# Hina — a calm new tab 🌅
 
 **Start every new tab with a breath of focus.**
 
-Dawn replaces Chrome's new‑tab page with a calm, **Liquid‑Glass** dashboard: a
+Hina replaces Chrome's new‑tab page with a calm, **Liquid‑Glass** dashboard: a
 big clock, a living time‑of‑day gradient, a daily *one focus* with a completion
 **streak**, quick search, speed‑dial links, a to‑do list, and a Pomodoro timer.
 It's **English‑first** (with 日本語 and Español built in) and everything runs
 **100% on your device** — no account, no server, no tracking.
 
-![Dawn](./store/screenshot-1.png)
+![Hina](./store/screenshot-1.png)
 
 The interface is built on Apple's **Liquid Glass** design language —
 translucent, refractive panels with specular edges, a moving mesh‑gradient
@@ -46,9 +46,9 @@ browser‑extension market, and the reason is structural, not lucky:
    user runs from the box is monetizable — search partners (Bing/Yahoo
    syndication, Ecosia‑style revenue share, etc.) pay per‑query for default
    placement. An acquirer buys predictable search revenue plus the install
-   base that generates it. Dawn keeps the engine switch front‑and‑center and
+   base that generates it. Hina keeps the engine switch front‑and‑center and
    defaults to Google so the surface is clean to re‑point post‑acquisition.
-2. **New‑tab = daily active by definition, and Dawn engineers the habit.**
+2. **New‑tab = daily active by definition, and Hina engineers the habit.**
    Retention is the metric acquirers underwrite. A new‑tab page is already
    opened dozens of times a day with zero re‑engagement spend — and the daily
    **focus streak** (🔥) gives users a reason to *come back and complete
@@ -98,7 +98,7 @@ Keyboard: press <kbd>/</kbd> to jump to search, <kbd>Esc</kbd> to close panels.
 ## Live web demo (Vercel)
 
 A Chrome extension isn't a website, so it doesn't appear on Vercel on its own.
-But Dawn is plain static HTML/CSS/JS and already falls back from
+But Hina is plain static HTML/CSS/JS and already falls back from
 `chrome.storage` to `localStorage`, so it runs unchanged as a web page.
 
 The build copies the static files into `public/dawn/` (see
@@ -145,7 +145,7 @@ No framework, no bundler, no `npm install`. Edit a file, reload the extension.
 
 ## Privacy
 
-Dawn stores your name, focus, to‑dos, links and preferences **only** in your
+Hina stores your name, focus, to‑dos, links and preferences **only** in your
 browser via `chrome.storage.local`. It makes **no network requests** of its
 own. Searches and link clicks navigate to the destination *you* chose, exactly
 as typing them into the address bar would.
