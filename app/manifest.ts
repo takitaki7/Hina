@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Dawn — a calm new tab",
-    short_name: "Dawn",
+    name: "Hina — a calm new tab",
+    short_name: "Hina",
     description:
       "A calm, private new tab with a Liquid Glass design. 100% on-device.",
     start_url: "/",

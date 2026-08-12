@@ -11,7 +11,8 @@
     "prebuild": "node scripts/sync-demo.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:zip": "python3 scripts/build-zip.py"
   },
   "dependencies": {
     "next": "15.5.22",
