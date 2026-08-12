@@ -2,10 +2,15 @@
 const nextConfig = {
   reactStrictMode: true,
   async rewrites() {
-    return [
-      // Live web demo of the Dawn extension (static files in public/dawn).
-      { source: "/dawn", destination: "/dawn/newtab.html" },
-    ];
+    // Serve the Dawn extension's static page (public/dawn) as the whole site.
+    // beforeFiles runs ahead of the app router, so the root URL itself renders
+    // Dawn without a redirect.
+    return {
+      beforeFiles: [
+        { source: "/", destination: "/dawn/newtab.html" },
+        { source: "/dawn", destination: "/dawn/newtab.html" },
+      ],
+    };
   },
 };
 
