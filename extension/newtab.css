@@ -1,7 +1,17 @@
+@font-face {
+  font-family: "InterVar";
+  src: url("fonts/inter.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+  font-style: normal;
+}
+
 :root {
+  --font: "InterVar", -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "Segoe UI", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --radius: 22px;
-  --glass-blur: blur(20px) saturate(200%) brightness(1.10);
+  --radius: 24px;
+  --glass-blur: blur(26px) saturate(220%) brightness(1.12);
 
   /* default background palette = "sky" (light); JS overrides at runtime */
   --bg1: #79b8f2; --bg2: #a9d8f2; --bg3: #e9f6ff;
@@ -24,8 +34,11 @@
     inset 0 -1px 1px rgba(255,255,255,0.18),
     inset 0 0 0 1px rgba(255,255,255,0.12);
   --glass-drop: 0 16px 40px rgba(0,0,0,0.34), 0 4px 12px rgba(0,0,0,0.20);
-  --clock-shadow: 0 2px 40px rgba(0,0,0,0.28), 0 0 1px rgba(255,255,255,0.4);
+  --clock-fill: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.60));
+  --clock-hi: rgba(255,255,255,0.35);
+  --clock-shadow2: rgba(0,0,0,0.35);
   --vignette: radial-gradient(130% 100% at 50% 4%, transparent 42%, rgba(0,0,0,0.30) 100%);
+  --blob-blend: screen; --blob-op: 0.6;
 }
 
 /* ---- LIGHT tone tokens (bright / sky backgrounds) ---- */
@@ -45,8 +58,11 @@
     inset 0 0 0 1px rgba(255,255,255,0.55),
     inset 0 -1px 1px rgba(90,120,160,0.18);
   --glass-drop: 0 16px 40px rgba(50,80,120,0.16), 0 4px 12px rgba(50,80,120,0.10);
-  --clock-shadow: 0 2px 30px rgba(90,130,180,0.22);
+  --clock-fill: linear-gradient(180deg, rgba(24,44,68,0.96), rgba(30,58,88,0.55));
+  --clock-hi: rgba(255,255,255,0.6);
+  --clock-shadow2: rgba(60,100,150,0.22);
   --vignette: radial-gradient(130% 100% at 50% 0%, transparent 58%, rgba(90,120,160,0.12) 100%);
+  --blob-blend: soft-light; --blob-op: 0.9;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -58,11 +74,13 @@ html, body {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
-    "Helvetica Neue", "Hiragino Sans", "Noto Sans JP", Arial, sans-serif;
+  font-family: var(--font);
+  font-feature-settings: "cv11", "ss01", "cv02", "cv03";
   color: var(--fg);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  letter-spacing: -0.011em;
 }
 .svg-defs { position: absolute; width: 0; height: 0; }
 
@@ -78,8 +96,8 @@ html, body {
   filter: blur(64px) saturate(1.25);
 }
 .blob {
-  position: absolute; border-radius: 50%; opacity: 0.62;
-  mix-blend-mode: screen; will-change: transform;
+  position: absolute; border-radius: 50%; opacity: var(--blob-op, 0.62);
+  mix-blend-mode: var(--blob-blend, screen); will-change: transform;
 }
 .b1 { width: 48vmax; height: 48vmax; left: -8%;  top: -12%; background: radial-gradient(circle, var(--blob1), transparent 62%); animation: drift1 30s ease-in-out infinite; }
 .b2 { width: 42vmax; height: 42vmax; right: -6%; top: 4%;   background: radial-gradient(circle, var(--blob2), transparent 62%); animation: drift2 34s ease-in-out infinite; }
@@ -155,7 +173,28 @@ html, body {
   padding: 28px clamp(20px, 5vw, 66px) 24px; gap: 20px;
 }
 .topbar { display: flex; align-items: center; justify-content: space-between; }
-.date { font-size: 15px; letter-spacing: 0.01em; color: var(--fg-dim); font-weight: 500; }
+.date { font-size: 15px; letter-spacing: -0.005em; color: var(--fg-dim); font-weight: 500; }
+
+/* weather chip */
+.weather {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; cursor: pointer;
+  border: none; color: var(--fg); font-size: 14px; font-weight: 500;
+}
+.weather .w-emoji { font-size: 15px; line-height: 1; }
+.weather .w-temp { font-variant-numeric: tabular-nums; }
+.weather-cfg { display: flex; flex-direction: column; gap: 9px; margin-top: 6px; }
+.weather-cfg > input {
+  background: var(--field); border: 1px solid var(--line); border-radius: 12px;
+  padding: 10px 13px; color: var(--fg); font-size: 14px; outline: none; transition: border-color 0.2s var(--ease);
+}
+.weather-cfg > input:focus { border-color: var(--accent); }
+.unit-row { display: flex; gap: 6px; }
+.unit-btn {
+  padding: 6px 15px; border-radius: 999px; border: 1px solid var(--line); background: transparent;
+  color: var(--fg-dim); cursor: pointer; font-size: 13px; transition: all 0.15s var(--ease);
+}
+.unit-btn.active { background: var(--chip); color: var(--fg); }
+.weather-status { font-size: 12px; color: var(--fg-faint); min-height: 14px; }
 
 .icon-btn {
   display: grid; place-items: center; width: 40px; height: 40px;
@@ -166,43 +205,39 @@ html, body {
 .icon-btn:hover { color: var(--fg); transform: translateY(-1px); }
 
 /* ---------- Hero ---------- */
-.hero { align-self: center; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.clock {
-  font-size: clamp(66px, 12.5vw, 138px); font-weight: 200; letter-spacing: -0.02em; line-height: 1;
-  font-variant-numeric: tabular-nums;
-  text-shadow: var(--clock-shadow);
-}
-.greeting { font-size: clamp(19px, 2.4vw, 27px); font-weight: 300; opacity: 0.94; }
+.hero { align-self: center; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
-.focus { margin-top: 16px; min-height: 36px; width: min(580px, 90vw); }
-.focus-ask { font-size: 14px; color: var(--fg-faint); margin-bottom: 8px; letter-spacing: 0.03em; }
+/* liquid-glass clock — translucent gradient numerals with depth */
+.clock {
+  font-size: clamp(70px, 13vw, 150px); font-weight: 300; letter-spacing: -0.03em; line-height: 1;
+  font-variant-numeric: tabular-nums; position: relative;
+  background: var(--clock-fill);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 1px 0 var(--clock-hi)) drop-shadow(0 10px 26px var(--clock-shadow2));
+}
+.greeting {
+  font-size: clamp(19px, 2.3vw, 26px); font-weight: 400; letter-spacing: -0.015em;
+  color: var(--fg); opacity: 0.92;
+}
+
+/* focus — one always-editable glass pill */
+.focus {
+  margin-top: 14px; display: inline-flex; align-items: center; gap: 9px;
+  padding: 11px 20px; border-radius: 999px; max-width: min(600px, 92vw);
+  background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), var(--glass-drop);
+  transition: box-shadow 0.25s var(--ease), transform 0.25s var(--ease);
+}
+.focus:focus-within { transform: translateY(-1px); }
+.focus-pen { color: var(--fg-faint); flex-shrink: 0; transition: color 0.2s var(--ease); }
+.focus:focus-within .focus-pen { color: var(--accent); }
 .focus-input {
-  width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--line-strong);
-  color: var(--fg); font-size: 21px; font-weight: 300; text-align: center; padding: 7px 4px; outline: none;
-  transition: border-color 0.2s var(--ease);
+  min-width: 0; flex: 1; background: transparent; border: none; outline: none;
+  color: var(--fg); font-size: 18px; font-weight: 400; letter-spacing: -0.01em;
+  text-align: center; padding: 2px 0; font-family: inherit;
 }
-.focus-input:focus { border-color: var(--accent); }
 .focus-input::placeholder { color: var(--fg-faint); }
-.focus-hint { font-size: 12.5px; color: var(--fg-faint); margin-top: 9px; letter-spacing: 0.02em; }
-.focus-help { font-size: 12.5px; color: var(--fg-faint); margin-top: 10px; letter-spacing: 0.01em; }
-.focus-done { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
-.focus-check {
-  width: 26px; height: 26px; border-radius: 50%; border: 1.6px solid rgba(255,255,255,0.5);
-  background: transparent; color: transparent; cursor: pointer; display: grid; place-items: center;
-  font-size: 14px; flex-shrink: 0; transition: all 0.2s var(--ease);
-}
-.focus-check:hover { border-color: rgba(255,255,255,0.85); }
-.focus-done.done .focus-check {
-  background: linear-gradient(135deg, #3fa8e8, #45c9d2); color: #fff; border-color: transparent;
-  box-shadow: 0 4px 14px rgba(60,150,210,0.4);
-}
-.focus-text { font-size: 23px; font-weight: 300; }
-.focus-done.done .focus-text { opacity: 0.66; }
-.streak {
-  font-size: 13px; font-weight: 600; padding: 5px 13px; letter-spacing: 0.01em;
-  border-radius: 999px; color: #ffe0b0; white-space: nowrap;
-  background: rgba(255, 176, 92, 0.16); border: 1px solid rgba(255, 200, 140, 0.30);
-}
 .link-btn { background: none; border: none; color: var(--fg-faint); cursor: pointer; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
 .link-btn:hover { color: var(--fg); }
 

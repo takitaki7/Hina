@@ -22,6 +22,7 @@ const FILES = [
   "quotes.js",
   "icons/icon32.png",
   "icons/icon128.png",
+  "fonts/inter.woff2",
 ];
 
 await rm(dest, { recursive: true, force: true });
