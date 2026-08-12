@@ -328,7 +328,9 @@ html, body {
   width: min(420px, 92vw); padding: 40px 34px; text-align: center;
   display: flex; flex-direction: column; align-items: center; gap: 14px; animation: pop 0.4s var(--ease);
 }
-.onboard-mark { font-size: 46px; }
+.onboard-logo {
+  border-radius: 20px; box-shadow: 0 10px 26px rgba(0,0,0,0.34), inset 0 1px 1px rgba(255,255,255,0.5);
+}
 .onboard-card h1 { font-size: 27px; font-weight: 300; }
 .onboard-card p { font-size: 15px; color: var(--fg-dim); font-weight: 300; }
 .onboard-form { display: flex; gap: 10px; width: 100%; margin-top: 6px; }
@@ -337,6 +339,27 @@ html, body {
   padding: 13px 16px; color: var(--fg); font-size: 16px; outline: none; text-align: center;
 }
 .onboard-form input:focus { border-color: rgba(255,255,255,0.55); }
+
+/* topbar actions + pomodoro/notes additions */
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+.pomo-head-actions { display: flex; align-items: center; gap: 4px; }
+.pomo-phase {
+  font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--fg-dim); margin-top: -4px;
+}
+.pomo-dots { display: flex; gap: 7px; justify-content: center; margin-top: 2px; min-height: 10px; }
+.pomo-dots .dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.22); transition: background 0.2s var(--ease); }
+.pomo-dots .dot.on { background: rgba(255,255,255,0.95); box-shadow: 0 0 8px rgba(255,255,255,0.5); }
+
+.notes-area {
+  flex: 1; min-height: 200px; resize: none; width: 100%;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); border-radius: 14px;
+  padding: 14px 16px; color: var(--fg); font-size: 15px; line-height: 1.6; outline: none;
+  font-family: inherit; transition: border-color 0.2s var(--ease);
+}
+.notes-area:focus { border-color: rgba(255,255,255,0.4); }
+.notes-area::placeholder { color: var(--fg-faint); }
+.notes-saved { font-size: 12px; color: var(--fg-faint); text-align: right; min-height: 16px; }
 
 /* ===================== MOTION / RESPONSIVE ===================== */
 @media (prefers-reduced-motion: reduce) {

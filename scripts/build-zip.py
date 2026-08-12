@@ -11,7 +11,10 @@ items = []
 for base, _, files in os.walk(src):
     for f in files:
         rel = os.path.relpath(os.path.join(base, f), src)
-        if rel.startswith("store" + os.sep) or rel == "README.md" or f == ".DS_Store":
+        # exclude store screenshots, README, the 512px listing icon (uploaded
+        # separately, not referenced by the manifest), and OS cruft
+        if (rel.startswith("store" + os.sep) or rel == "README.md"
+                or rel == os.path.join("icons", "icon512.png") or f == ".DS_Store"):
             continue
         items.append((os.path.join(base, f), rel))
 items.sort(key=lambda x: x[1])
