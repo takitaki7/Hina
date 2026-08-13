@@ -3,7 +3,7 @@ import "./globals.css";
 
 const title = "Hina — a calm new tab";
 const description =
-  "A calm, private new tab with a Liquid Glass design: clock, daily focus with streaks, to-dos, a Pomodoro timer, quick links and search. 100% on-device.";
+  "A calm, private new tab with a Liquid Glass design: clock, daily focus, to-dos, a Pomodoro timer, quick links and search. 100% on-device.";
 
 export const metadata: Metadata = {
   title,
