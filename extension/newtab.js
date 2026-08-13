@@ -317,7 +317,7 @@ function renderTodoList() {
     if (t.done) li.classList.add("done");
     const check = document.createElement("div");
     check.className = "check";
-    check.textContent = "✓";
+    check.innerHTML = CHECK_SVG;
     check.onclick = () => { t.done = !t.done; save(); renderTodoList(); renderTodoCount(); };
     const txt = document.createElement("span");
     txt.className = "txt";
@@ -336,6 +336,7 @@ const RING_CIRC = 2 * Math.PI * 52; // r=52 in the SVG
 const SVG_ATTR = 'viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"';
 const SOUND_ON = `<svg ${SVG_ATTR}><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg>`;
 const SOUND_OFF = `<svg ${SVG_ATTR}><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M22 9l-6 6"/><path d="M16 9l6 6"/></svg>`;
+const CHECK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>`;
 const pomo = {
   focusMin: 25, breakMin: 5, longBreakMin: 15,
   phase: "focus", sessions: 0,
