@@ -29,7 +29,6 @@ const DEFAULTS = {
   ],
   focusText: "",                            // an intention you can edit anytime
   todos: [],
-  notes: "",
   toggles: { dial: true, clock24: true, seconds: false, chime: true },
   firstRunDone: false,
 };
@@ -136,8 +135,6 @@ function renderStaticText() {
   $("pomoTitle").textContent = T.pomoTitle;
   $("pomoReset").textContent = T.pomoReset;
   $("pomoLabel").textContent = T.pomoLabel;
-  $("notesTitle").textContent = T.notesTitle;
-  $("notesLabel").textContent = T.notesTitle;
   $("setTitle").textContent = T.setTitle;
   $("setNameLabel").textContent = T.setName;
   $("setName").placeholder = T.setNamePlaceholder;
@@ -448,21 +445,6 @@ function flashTitle(msg) {
   titleTimer = setTimeout(() => (document.title = "Hina"), 6000);
 }
 
-/* ---------- notes ---------- */
-let notesTimer = null;
-function renderNotes() {
-  $("notesArea").value = S.notes || "";
-  $("notesArea").placeholder = T.notesPlaceholder;
-  $("notesSaved").textContent = "";
-}
-function saveNotes() {
-  S.notes = $("notesArea").value;
-  save();
-  $("notesSaved").textContent = T.notesSaved;
-  clearTimeout(notesTimer);
-  notesTimer = setTimeout(() => ($("notesSaved").textContent = ""), 1500);
-}
-
 /* ---------- settings ---------- */
 function renderSettings() {
   $("setName").value = S.name;
@@ -570,7 +552,7 @@ function openPanel(id) {
   $("scrim").hidden = false;
 }
 function closePanels() {
-  ["todoPanel", "pomoPanel", "settingsPanel", "notesPanel"].forEach((id) => ($(id).hidden = true));
+  ["todoPanel", "pomoPanel", "settingsPanel"].forEach((id) => ($(id).hidden = true));
   $("scrim").hidden = true;
 }
 
@@ -631,10 +613,6 @@ function wireEvents() {
       pomoReset();
     });
   });
-
-  // notes (auto-saved)
-  $("notesBtn").addEventListener("click", () => { renderNotes(); openPanel("notesPanel"); setTimeout(() => $("notesArea").focus(), 60); });
-  $("notesArea").addEventListener("input", saveNotes);
 
   // settings
   $("openSettings").addEventListener("click", () => { renderSettings(); openPanel("settingsPanel"); });
