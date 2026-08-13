@@ -71,6 +71,7 @@ function save() { store.set(S); }
   const saved = await store.get();
   S = deepMerge(structuredClone(DEFAULTS), saved);
   if (!S.focusText && saved.focus && saved.focus.text) S.focusText = saved.focus.text; // migrate old shape
+  if (S.bg.mode !== "custom" && !PALETTES[S.bg.preset]) { S.bg.mode = "preset"; S.bg.preset = "sky"; } // drop removed presets/auto
   applyLang();
   renderAll();
   startClock();
@@ -152,7 +153,7 @@ function renderStaticText() {
   $("obName").placeholder = T.ob_placeholder;
   $("obGo").textContent = T.ob_go;
   $("obSkip").textContent = T.ob_skip;
-  const modes = document.querySelectorAll("#pomoPanel .mode");
+  const modes = document.querySelectorAll("#pomoPanel .seg");
   if (modes[0]) modes[0].textContent = T.m_focus;
   if (modes[1]) modes[1].textContent = T.m_short;
   if (modes[2]) modes[2].textContent = T.m_long;
@@ -196,18 +197,12 @@ function renderClock() {
    Each palette: { s: [3 gradient stops], tone: "light" | "dark" }.
    Light palettes flip the UI to dark text for readability. */
 const PALETTES = {
-  sky:      { s: ["#79b8f2", "#a9d8f2", "#e9f6ff"], tone: "light" },
-  daylight: { s: ["#8fc7f2", "#c6e2f6", "#ffffff"], tone: "light" },
-  sea:      { s: ["#7fd0d8", "#b6ecec", "#eafcff"], tone: "light" },
-  sunrise:  { s: ["#ffc9b0", "#ffe0cf", "#fff6ef"], tone: "light" },
-  mist:     { s: ["#cdd8e6", "#e6ecf3", "#ffffff"], tone: "light" },
-  meadow:   { s: ["#bfe3a8", "#dcefc8", "#f4fbe9"], tone: "light" },
-  midnight: { s: ["#05060f", "#12172e", "#243056"], tone: "dark" },
-  aurora:   { s: ["#04121f", "#0b3d4a", "#1f9d7a"], tone: "dark" },
-  forest:   { s: ["#0c2016", "#1c4a34", "#4a9060"], tone: "dark" },
-  graphite: { s: ["#101014", "#26262e", "#44444e"], tone: "dark" },
+  white: { s: ["#e9eef5", "#f5f8fc", "#ffffff"], tone: "light" },
+  sky:   { s: ["#79b8f2", "#a9d8f2", "#e9f6ff"], tone: "light" },
+  pink:  { s: ["#ff9ec6", "#ffc7e0", "#fff1f7"], tone: "light" },
+  black: { s: ["#08080c", "#141420", "#232532"], tone: "dark" },
 };
-const PALETTE_ORDER = ["sky", "daylight", "sea", "sunrise", "mist", "meadow", "midnight", "aurora", "forest", "graphite"];
+const PALETTE_ORDER = ["white", "sky", "pink", "black"];
 
 function hexToRgb(h) { h = h.replace("#", ""); return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); }
 function rgbToHex(a) { return "#" + a.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join(""); }
@@ -235,13 +230,6 @@ function adjust(hex, dL, dS, dH = 0) {
 function mixHex(a, c, t) { const A = hexToRgb(a), C = hexToRgb(c); return rgbToHex(A.map((v, i) => v + (C[i] - v) * t)); }
 function deriveBlobs([a, b, c]) { return [adjust(c, 6, 22, 4), adjust(b, 2, 18, -12), adjust(c, 14, 14, 16), adjust(a, 24, 20, 8)]; }
 
-function autoPreset() {
-  const h = new Date().getHours();
-  if (h >= 5 && h < 8) return "sunrise";
-  if (h >= 8 && h < 17) return "sky";
-  if (h >= 17 && h < 20) return "daylight";
-  return "midnight";
-}
 function luminance(hex) {
   const [r, g, b] = hexToRgb(hex).map((v) => {
     v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
@@ -254,7 +242,6 @@ function toneForStops(s) {
 }
 function paletteFor(bg) {
   if (bg.mode === "custom") { const s = [bg.c1, mixHex(bg.c1, bg.c2, 0.5), bg.c2]; return { s, tone: toneForStops(s) }; }
-  if (bg.mode === "auto") return PALETTES[autoPreset()];
   return PALETTES[bg.preset] || PALETTES.sky;
 }
 function applyTheme() {
@@ -296,20 +283,6 @@ function isUrl(s) {
 }
 
 /* ---------- speed dial ---------- */
-const TILE_COLORS = [
-  ["#6366f1", "#8b5cf6"], ["#0ea5e9", "#22d3ee"], ["#10b981", "#34d399"],
-  ["#f59e0b", "#fbbf24"], ["#ef4444", "#fb7185"], ["#ec4899", "#f472b6"],
-  ["#8b5cf6", "#c084fc"], ["#14b8a6", "#2dd4bf"],
-];
-function rgbaStr(hex, a) { const [r, g, b] = hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; }
-// translucent tint so the frosted glass blur shows through (liquid-glass tiles)
-function tintFor(str) {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
-  const [a, b] = TILE_COLORS[h % TILE_COLORS.length];
-  return `linear-gradient(135deg, ${rgbaStr(a, 0.74)}, ${rgbaStr(b, 0.74)})`;
-}
-
 function renderDial() {
   const dial = $("dial");
   dial.innerHTML = "";
@@ -320,7 +293,6 @@ function renderDial() {
     a.href = normalizeUrl(l.url);
     const tile = document.createElement("div");
     tile.className = "tile";
-    tile.style.setProperty("--tint", tintFor(l.name || l.url));
     tile.textContent = (l.name || l.url).trim().charAt(0).toUpperCase();
     const span = document.createElement("span");
     span.textContent = l.name || hostOf(l.url);
@@ -502,7 +474,6 @@ function renderSettings() {
 
 /* ---------- background palette picker ---------- */
 function bgActive(key) {
-  if (key === "auto") return S.bg.mode === "auto";
   if (key === "custom") return S.bg.mode === "custom";
   return S.bg.mode === "preset" && S.bg.preset === key;
 }
@@ -520,15 +491,13 @@ function renderPalette() {
     box.append(b);
   };
   PALETTE_ORDER.forEach((k) => swatch(k, PALETTES[k].s));
-  swatch("auto", PALETTES[autoPreset()].s, "◐");
   swatch("custom", [S.bg.c1, mixHex(S.bg.c1, S.bg.c2, 0.5), S.bg.c2], "✎");
   $("customRow").hidden = S.bg.mode !== "custom";
   $("ccTop").value = S.bg.c1;
   $("ccBot").value = S.bg.c2;
 }
 function selectPalette(key) {
-  if (key === "auto") S.bg.mode = "auto";
-  else if (key === "custom") S.bg.mode = "custom";
+  if (key === "custom") S.bg.mode = "custom";
   else { S.bg.mode = "preset"; S.bg.preset = key; }
   save();
   applyTheme();
@@ -653,9 +622,9 @@ function wireEvents() {
   $("pomoStart").addEventListener("click", pomoToggle);
   $("pomoReset").addEventListener("click", pomoReset);
   $("pomoMute").addEventListener("click", () => { S.toggles.chime = !S.toggles.chime; save(); renderPomo(); });
-  document.querySelectorAll("#pomoPanel .mode").forEach((btn) => {
+  document.querySelectorAll("#pomoPanel .seg").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll("#pomoPanel .mode").forEach((b) => b.classList.remove("active"));
+      document.querySelectorAll("#pomoPanel .seg").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       pomo.focusMin = Number(btn.dataset.min);
       pomoReset();
