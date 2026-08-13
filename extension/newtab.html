@@ -107,29 +107,29 @@
   <aside class="panel panel-center glass" id="pomoPanel" hidden>
     <div class="panel-head">
       <h2 id="pomoTitle"></h2>
-      <div class="pomo-head-actions">
-        <button class="icon-btn" id="pomoMute" aria-label="Sound"></button>
-        <button class="icon-btn" data-close aria-label="Close">✕</button>
-      </div>
+      <button class="icon-btn" data-close aria-label="Close">✕</button>
     </div>
-    <div class="pomo-phase" id="pomoPhase"></div>
     <div class="pomo-ring">
       <svg viewBox="0 0 120 120" class="ring">
         <circle class="ring-track" cx="60" cy="60" r="52" />
         <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52" />
       </svg>
-      <div class="pomo-time" id="pomoTime">25:00</div>
+      <div class="pomo-center">
+        <div class="pomo-phase" id="pomoPhase"></div>
+        <div class="pomo-time" id="pomoTime">25:00</div>
+      </div>
     </div>
     <div class="pomo-dots" id="pomoDots"></div>
+    <div class="segmented" id="pomoModes">
+      <button type="button" data-min="25" class="seg active"></button>
+      <button type="button" data-min="5" class="seg"></button>
+      <button type="button" data-min="15" class="seg"></button>
+    </div>
     <div class="pomo-controls">
       <button class="btn primary" id="pomoStart"></button>
-      <button class="btn ghost" id="pomoReset"></button>
+      <button class="btn subtle" id="pomoReset"></button>
     </div>
-    <div class="pomo-modes">
-      <button data-min="25" class="mode active"></button>
-      <button data-min="5" class="mode"></button>
-      <button data-min="15" class="mode"></button>
-    </div>
+    <button class="pomo-sound" id="pomoMute" aria-label="Sound"></button>
   </aside>
 
   <!-- Notes panel -->
