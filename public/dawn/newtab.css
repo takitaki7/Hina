@@ -27,7 +27,8 @@
   --chip: rgba(255,255,255,0.16);
   --btn: rgba(255,255,255,0.18);
   --seg-thumb: rgba(255,255,255,0.30);
-  --accent: #ffffff;
+  --accent: #ffffff;        /* monochrome accent = text color, unified across themes */
+  --accent-fg: #17233a;     /* contrasting ink on the accent */
   --glass-bg: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06) 42%, rgba(255,255,255,0.02));
   --glass-edge:
     inset 0 1.4px 0.5px rgba(255,255,255,0.75),
@@ -53,7 +54,8 @@
   --chip: rgba(20, 50, 85, 0.10);
   --btn: rgba(20, 50, 85, 0.13);
   --seg-thumb: #ffffff;
-  --accent: #1f74c4;
+  --accent: #16283c;        /* monochrome accent = text color */
+  --accent-fg: #ffffff;
   --glass-bg: linear-gradient(135deg, rgba(255,255,255,0.62), rgba(255,255,255,0.34) 42%, rgba(255,255,255,0.22));
   --glass-edge:
     inset 0 1.4px 0.5px rgba(255,255,255,0.95),
@@ -206,7 +208,8 @@ html, body {
 /* focus — one always-editable glass pill */
 .focus {
   margin-top: 14px; display: inline-flex; align-items: center; gap: 9px;
-  padding: 11px 20px; border-radius: 999px; max-width: min(600px, 92vw);
+  padding: 11px 22px; border-radius: 999px;
+  min-width: min(360px, 84vw); max-width: min(600px, 92vw);
   background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
   box-shadow: var(--glass-edge), var(--glass-drop);
   transition: box-shadow 0.25s var(--ease), transform 0.25s var(--ease);
@@ -309,17 +312,21 @@ html, body {
 .todo-list li:hover { background: var(--chip); }
 .todo-list li.done .txt { text-decoration: line-through; color: var(--fg-faint); }
 .todo-list .check {
-  width: 21px; height: 21px; border-radius: 7px; border: 1.6px solid var(--line-strong); cursor: pointer;
+  width: 22px; height: 22px; border-radius: 7px; border: 1.6px solid var(--line-strong); cursor: pointer;
   display: grid; place-items: center; flex-shrink: 0; color: transparent; transition: all 0.15s var(--ease);
 }
-.todo-list li.done .check { background: linear-gradient(135deg,#3fa8e8,#45c9d2); color: #fff; border-color: transparent; }
+.todo-list .check svg { width: 13px; height: 13px; opacity: 0; transition: opacity 0.12s var(--ease); }
+.todo-list li.done .check { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
+.todo-list li.done .check svg { opacity: 1; }
 .todo-list .txt { flex: 1; font-size: 14px; }
-.todo-list .del { background: none; border: none; color: var(--fg-faint); cursor: pointer; font-size: 15px; opacity: 0; }
+.todo-list .del { background: none; border: none; color: var(--fg-faint); cursor: pointer; font-size: 15px; opacity: 0; transition: color 0.15s var(--ease); }
 .todo-list li:hover .del { opacity: 1; }
-.todo-list .del:hover { color: #ff8b8b; }
+.todo-list .del:hover { color: var(--fg); }
 
 /* ---------- pomodoro (unified, Apple-style) ---------- */
 #pomoPanel { gap: 18px; padding-top: 20px; }
+#pomoPanel .panel-head { position: relative; width: 100%; justify-content: flex-end; } /* × in the top-right corner */
+#pomoPanel .panel-head h2 { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }  /* title centered */
 .pomo-ring { position: relative; width: 190px; height: 190px; margin: 2px 0; }
 .pomo-ring .ring { width: 100%; height: 100%; transform: rotate(-90deg); }
 .ring-track { fill: none; stroke: var(--line); stroke-width: 7; }
@@ -357,10 +364,10 @@ html, body {
   font-family: inherit; transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease), background 0.18s var(--ease);
 }
 .btn.primary {
-  background: linear-gradient(135deg, #3fa8e8, #45c9d2); color: #fff;
-  box-shadow: 0 8px 22px rgba(60,150,210,0.30);
+  background: var(--accent); color: var(--accent-fg);
+  box-shadow: 0 8px 20px rgba(20,40,70,0.20);
 }
-.btn.primary:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(60,150,210,0.4); }
+.btn.primary:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,40,70,0.26); }
 .btn.subtle { background: transparent; color: var(--fg-dim); padding: 12px 18px; }
 .btn.subtle:hover { color: var(--fg); }
 
@@ -378,8 +385,8 @@ html, body {
 .link-row { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 4px 2px; }
 .link-row .lr-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .link-row .lr-url { color: var(--fg-faint); font-size: 12px; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.link-row button { background: none; border: none; color: var(--fg-faint); cursor: pointer; }
-.link-row button:hover { color: #ff8b8b; }
+.link-row button { background: none; border: none; color: var(--fg-faint); cursor: pointer; transition: color 0.15s var(--ease); }
+.link-row button:hover { color: var(--fg); }
 .link-add { display: flex; gap: 6px; margin-top: 4px; align-items: center; }
 .link-add input { font-size: 13px; padding: 9px 11px; }
 .link-add button { width: 40px; height: 40px; font-size: 18px; }

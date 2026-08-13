@@ -1,4 +1,8 @@
 {
-  "ext_name": { "message": "Hina — Nueva pestaña con calma" },
-  "ext_desc": { "message": "Nueva pestaña tranquila y privada con diseño Liquid Glass: reloj, foco diario con rachas, tareas, Pomodoro, enlaces y búsqueda." }
+  "ext_name": {
+    "message": "Hina"
+  },
+  "ext_desc": {
+    "message": "Nueva pestaña tranquila y privada con diseño Liquid Glass: reloj, foco diario con rachas, tareas, Pomodoro, enlaces y búsqueda."
+  }
 }

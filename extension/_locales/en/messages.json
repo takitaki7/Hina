@@ -1,4 +1,8 @@
 {
-  "ext_name": { "message": "Hina — Calm New Tab & Focus" },
-  "ext_desc": { "message": "A calm, private new tab with a Liquid Glass design — clock, daily focus & streaks, to-dos, Pomodoro, quick links and search." }
+  "ext_name": {
+    "message": "Hina"
+  },
+  "ext_desc": {
+    "message": "A calm, private new tab with a Liquid Glass design — clock, daily focus & streaks, to-dos, Pomodoro, quick links and search."
+  }
 }
